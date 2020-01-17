@@ -23,8 +23,10 @@ class UserSeeder {
     const user = new User();
 
     user.firstname = "admin";
-    user.lastname = "admin";
+    user.lastname = "admin"
     user.email = "admin@localhost.local";
+    user.gender = "unspecified";
+    user.birthday = "unspecified";
     user.password = "admin";
 
     await user.save();

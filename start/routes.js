@@ -19,3 +19,25 @@ const Route = use('Route')
 Route.get('/', () => {
   return { greeting: 'Hello world in JSON' }
 })
+
+/** ----------------------------------------------------------------
+ *                         USER ROUTES
+ * ----------------------------------------------------------------
+ */
+
+
+Route.post("/user/add", "UserController.add").middleware(["spoofAccept", "auth", "can:(user_create or all_permissions)"]);
+
+Route.post("/user/update", "UserController.update").middleware(["spoofAccept", "auth", "can:(user_update or all_permissions)"]);
+
+Route.post("/user/delete", "UserController.delete").middleware(["spoofAccept", "auth", "can:(user_update or delete)"]);
+
+Route.post("/user/login", "UserController.login").middleware(["spoofAccept", "guest"]);
+
+Route.post( "/user/comparepassword", "UserController.comparePassword").middleware(["spoofAccept", "auth"]);
+
+Route.get("/users/:id", "UserController.getOne").middleware(["spoofAccept", "auth", "can:(user_get or all_permissions)"]);
+
+Route.get("/users", "UserController.getAll").middleware(["spoofAccept", "auth", "can:(user_getall or all_permissions)"]);
+
+Route.get("/user", "UserController.getSelf").middleware(["spoofAccept", "auth"]);

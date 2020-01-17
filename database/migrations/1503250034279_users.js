@@ -9,8 +9,9 @@ class UserSchema extends Schema {
       table.uuid("id").notNullable().primary();
       table.string("firstname", 45).notNullable();
       table.string("lastname", 45).notNullable();
+      table.string("email").notNullable().unique();
       table.string("gender",45).notNullable();
-      table.string("email").notNullable();
+      table.string("birthday",45).notNullable();
       table.string("password").notNullable();
       table.timestamps()
     })
