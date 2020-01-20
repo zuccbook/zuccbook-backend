@@ -26,11 +26,11 @@ Route.get('/', () => {
  */
 
 
-Route.post("/user/add", "UserController.add").middleware(["spoofAccept", "auth", "can:(user_create or all_permissions)"]);
+Route.post("/user/register", "UserController.register").middleware(["spoofAccept", "auth", "can:(user_create or all_permissions)"]);
 
-Route.post("/user/update", "UserController.update").middleware(["spoofAccept", "auth", "can:(user_update or all_permissions)"]);
+Route.patch("/user/update", "UserController.update").middleware(["spoofAccept", "auth", "can:(user_update or all_permissions)"]);
 
-Route.post("/user/delete", "UserController.delete").middleware(["spoofAccept", "auth", "can:(user_update or delete)"]);
+Route.delete("/user/delete", "UserController.delete").middleware(["spoofAccept", "auth", "can:(user_update or delete)"]);
 
 Route.post("/user/login", "UserController.login").middleware(["spoofAccept", "guest"]);
 

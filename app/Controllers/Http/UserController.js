@@ -7,16 +7,18 @@ const User = use("App/Models/User");
 const Hash = use('Hash');
 
 class UserController {
-  async add({ request, response }) {
+  async register({ request, response }) {
 
     const rules = {
       first_name: "required",
       last_name: "required",
+      gender: "required",
+      birthday:"required",
       email: "required|email|unique:users,email",
       password: "required"
     };
 
-    const body = request.only(["first_name", "last_name", "email", "password"]);
+    const body = request.only(["first_name", "last_name", "email", "gender", "birthday", "password"]);
 
     // Validate input.
     const validation = await validate(body, rules);
@@ -33,6 +35,8 @@ class UserController {
     user.firstname = body.first_name;
     user.lastname = body.last_name;
     user.email = body.email;
+    user.gender = body.gender;
+    user.birthday = body.birthday;
     user.password = body.password;
 
     await user.save();
@@ -65,6 +69,8 @@ class UserController {
 
     body.first_name = request.input("first_name", user.firstname);
     body.last_name = request.input("last_name", user.lastname);
+    body.gender = request.input("gender", user.gender);
+    body.birthday = request.input("birthday", user.birthday);
     body.email = request.input("email", user.email);
     body.password = request.input("password", user.password);
 
@@ -80,6 +86,8 @@ class UserController {
     user.firstname = body.first_name;
     user.lastname = body.last_name;
     user.email = body.email;
+    user.gender = body.gender
+    user.birthday = body.birthday
     user.password = body.password;
 
     await user.save();
