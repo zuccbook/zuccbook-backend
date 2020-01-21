@@ -26,7 +26,7 @@ Route.get('/', () => {
  */
 
 
-Route.post("/user/register", "UserController.register").middleware(["spoofAccept", "auth", "can:(user_create or all_permissions)"]);
+Route.post("/user/register", "UserController.register").middleware(["spoofAccept", "guest"]);
 
 Route.patch("/user/update", "UserController.update").middleware(["spoofAccept", "auth", "can:(user_update or all_permissions)"]);
 

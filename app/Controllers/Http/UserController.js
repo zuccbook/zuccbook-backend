@@ -10,15 +10,15 @@ class UserController {
   async register({ request, response }) {
 
     const rules = {
-      first_name: "required",
-      last_name: "required",
+      firstname: "required",
+      lastname: "required",
       gender: "required",
       birthday:"required",
       email: "required|email|unique:users,email",
       password: "required"
     };
 
-    const body = request.only(["first_name", "last_name", "email", "gender", "birthday", "password"]);
+    const body = request.only(["firstname", "lastname", "email", "gender", "birthday", "password"]);
 
     // Validate input.
     const validation = await validate(body, rules);
@@ -32,8 +32,8 @@ class UserController {
 
     const user = new User();
 
-    user.firstname = body.first_name;
-    user.lastname = body.last_name;
+    user.firstname = body.firstname;
+    user.lastname = body.lastname;
     user.email = body.email;
     user.gender = body.gender;
     user.birthday = body.birthday;
