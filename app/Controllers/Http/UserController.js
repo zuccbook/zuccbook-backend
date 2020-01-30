@@ -1,19 +1,19 @@
 'use strict';
 
-const { validate } = use('Validator');
+const {validate} = use('Validator');
 
 const User = use("App/Models/User");
 
 const Hash = use('Hash');
 
 class UserController {
-  async register({ request, response }) {
+  async register({request, response}) {
 
     const rules = {
       firstname: "required",
       lastname: "required",
       gender: "required",
-      birthday:"required",
+      birthday: "required",
       email: "required|email|unique:users,email",
       password: "required"
     };
@@ -23,7 +23,7 @@ class UserController {
     // Validate input.
     const validation = await validate(body, rules);
 
-    if(validation.fails()) {
+    if (validation.fails()) {
       return response.status(400).json({
         status: "Error",
         message: validation.messages()
@@ -47,11 +47,11 @@ class UserController {
     });
   }
 
-  async update({ request, auth, response }) {
+  async update({request, auth, response}) {
 
     const user = await User.find(request.only("id").id);
 
-    if(!user) {
+    if (!user) {
       return response.status(400).json({
         status: "Error",
         message: "Request was malformed"
@@ -76,7 +76,7 @@ class UserController {
 
     const validation = await validate(body, rules);
 
-    if(validation.fails()) {
+    if (validation.fails()) {
       return response.status(400).json({
         status: "Error",
         message: validation.messages()
@@ -98,10 +98,10 @@ class UserController {
     });
   }
 
-  async delete({ request, auth, response }) {
+  async delete({request, auth, response}) {
     const user = await User.find(request.only("id").id);
 
-    if(!user) {
+    if (!user) {
       return response.status(400).json({
         status: "Error",
         message: "Request was malformed"
@@ -116,10 +116,10 @@ class UserController {
     });
   }
 
-  async getOne({ request, params, auth, response }) {
+  async getOne({request, params, auth, response}) {
     const user = await User.find(params.id);
 
-    if(!user) {
+    if (!user) {
       return response.status(404).json({
         status: "Error",
         message: "Could not find the specified user."
@@ -133,10 +133,10 @@ class UserController {
     });
   }
 
-  async getAll({ request, params, auth, response }) {
+  async getAll({request, params, auth, response}) {
     const users = await User.query().paginate(request.input("page", 1), request.input("limit", 20));
 
-    if(!users) {
+    if (!users) {
       return response.status(404).json({
         status: "Error",
         message: "Could not get the users"
@@ -150,7 +150,7 @@ class UserController {
     });
   }
 
-  async login({ request, auth, response }) {
+  async login({request, auth, response}) {
     const rules = {
       email: "required|email",
       password: "required"
@@ -160,7 +160,7 @@ class UserController {
 
     const validation = await validate(body, rules);
 
-    if(validation.fails()) {
+    if (validation.fails()) {
       return response.status(400).json({
         status: "Error",
         message: validation.messages()
@@ -169,7 +169,7 @@ class UserController {
 
     const jwt = await auth.attempt(body.email, body.password);
 
-    if(!jwt) {
+    if (!jwt) {
       return response.status(500).json({
         status: "Error",
         message: "Unknown error"
@@ -183,7 +183,7 @@ class UserController {
     });
   }
 
-  async getSelf({ request, auth, response }) {
+  async getSelf({request, auth, response}) {
 
     return response.status(200).json({
       status: "Success",
@@ -192,9 +192,9 @@ class UserController {
     });
   }
 
-  async comparePassword({ request, auth, response }){
-    const isSame = await Hash.verify( request.input("password"), request.input("hash") );
-    if( isSame ) {
+  async comparePassword({request, auth, response}) {
+    const isSame = await Hash.verify(request.input("password"), request.input("hash"));
+    if (isSame) {
       return response.status(200).json({
         status: "Success",
         message: "The passwords match."
@@ -205,6 +205,31 @@ class UserController {
         message: "No match"
       })
     }
+  }
+
+  async search({request, auth, response}) {
+    const {q} = request.only(['q'])
+    if(q === ''){
+      return response.status(400).json({
+        status: "Error",
+        message: "Missing query."
+      });
+
+
+    }
+    const user = await User.query().where('firstname', 'LIKE', q+'%').fetch()
+
+    if (!user) {
+      return response.status(404).json({
+        status: "Error",
+        message: "Could not find the specified user."
+      });
+    }
+
+    return response.status(200).json({
+      status: "Success",
+      data: user
+    });
   }
 }
 

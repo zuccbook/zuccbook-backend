@@ -41,3 +41,6 @@ Route.get("/users/:id", "UserController.getOne").middleware(["spoofAccept", "aut
 Route.get("/users", "UserController.getAll").middleware(["spoofAccept", "auth", "can:(user_getall or all_permissions)"]);
 
 Route.get("/user", "UserController.getSelf").middleware(["spoofAccept", "auth"]);
+
+Route.get("/user/search", "UserController.search").middleware(["spoofAccept", "auth"]);
+

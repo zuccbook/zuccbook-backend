@@ -38,10 +38,6 @@ class User extends Model {
     return null;
   }
 
-  groups() {
-    return this.belongsToMany("App/Models/Role")
-      .pivotModel("App/Models/RoleUser");
-  }
 }
 
 module.exports = User;
