@@ -118,7 +118,6 @@ class UserController {
 
   async getOne({request, params, auth, response}) {
     const user = await User.find(params.id);
-
     if (!user) {
       return response.status(404).json({
         status: "Error",
