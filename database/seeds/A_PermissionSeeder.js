@@ -2,7 +2,7 @@
 
 /*
 |--------------------------------------------------------------------------
-| PermissionSeeder
+| A_PermissionSeeder
 |--------------------------------------------------------------------------
 |
 | Make use of the Factory instance to seed database with dummy data or
@@ -14,7 +14,7 @@
 const Factory = use('Factory')
 const Permission = use("App/Models/Permission");
 
-class PermissionSeeder {
+class A_PermissionSeeder {
   async run () {
     let list =
       [
@@ -60,4 +60,4 @@ class PermissionSeeder {
   }
 }
 
-module.exports = PermissionSeeder
+module.exports = A_PermissionSeeder

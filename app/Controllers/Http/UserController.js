@@ -3,6 +3,8 @@
 const {validate} = use('Validator');
 
 const User = use("App/Models/User");
+const Role = use("App/Models/Role");
+const PrivacySetting = use("App/Models/PrivacySetting");
 
 const Hash = use('Hash');
 
@@ -41,6 +43,18 @@ class UserController {
 
     await user.save();
 
+
+    const setting = new PrivacySetting();
+    setting.user_id = user.id;
+    setting.profile_privacy = 'friends';
+    setting.who_can_add = 'everyone';
+
+    setting.save()
+
+    const userRole = await Role.findBy("slug", "user");
+
+    await user.Roles().attach([userRole.id]);
+
     return response.status(200).json({
       status: "Success",
       message: "The user was successfully created."
@@ -50,7 +64,6 @@ class UserController {
   async update({request, auth, response}) {
 
     const user = await User.find(request.only("id").id);
-
     if (!user) {
       return response.status(400).json({
         status: "Error",
@@ -117,7 +130,11 @@ class UserController {
   }
 
   async getOne({request, params, auth, response}) {
-    const user = await User.find(params.id);
+    const user = await User.query()
+      .innerJoin('privacy_settings', "privacy_settings.user_id",'users.id')
+      .innerJoin('user_avatars', 'user_avatars.user_id', 'users.id')
+      .where("users.id",params.id).first()
+
     if (!user) {
       return response.status(404).json({
         status: "Error",
@@ -183,11 +200,26 @@ class UserController {
   }
 
   async getSelf({request, auth, response}) {
+    const id = auth.user.id
+    console.log(id)
 
+    const user = await User.query()
+      .innerJoin('role_user', 'role_user.user_id', 'users.id')
+      .innerJoin('roles', 'roles.id','role_user.role_id')
+      .innerJoin('user_avatars', 'user_avatars.user_id', 'users.id')
+      .where("users.id", id).first()
+      console.log(user)
+
+    if (!user) {
+      return response.status(404).json({
+        status: "Error",
+        message: "Could not find the specified user."
+      });
+    }
     return response.status(200).json({
       status: "Success",
       message: "The user was successfully found.",
-      data: await auth.getUser()
+      data: user
     });
   }
 
@@ -216,7 +248,8 @@ class UserController {
 
 
     }
-    const user = await User.query().where('firstname', 'LIKE', q+'%').fetch()
+    const user = await User.query().where('firstname', 'LIKE', q+'%')
+      .innerJoin("users_avatars as ua","ua.id", "users.id").fetch()
 
     if (!user) {
       return response.status(404).json({

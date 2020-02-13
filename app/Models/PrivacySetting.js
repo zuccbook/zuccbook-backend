@@ -15,6 +15,11 @@ class PrivacySetting extends Model {
   static get updatedAtColumn () {
     return null;
   }
+  Users() {
+    return this.belongsToMany("App/Models/User")
+      .pivotModel("App/Models/PrivacySetting");
+
+  }
 }
 
 module.exports = PrivacySetting

@@ -2,7 +2,7 @@
 
 /*
 |--------------------------------------------------------------------------
-| UserSeeder
+| D_UserSeeder
 |--------------------------------------------------------------------------
 |
 | Make use of the Factory instance to seed database with dummy data or
@@ -16,7 +16,8 @@ const Factory = use('Factory');
 const User = use("App/Models/User");
 const Role = use("App/Models/Role");
 
-class UserSeeder {
+
+class D_UserSeeder {
   async run () {
 
     if(await User.findBy("email", "admin@localhost.local")) return;
@@ -30,14 +31,14 @@ class UserSeeder {
     user.birthday = "unspecified";
     user.password = "admin";
 
+    await user.save();
     const findUser = await User.findBy("email", "admin@localhost.local");
     const adminRole = await Role.findBy("slug", "admin");
 
     await findUser.Roles().attach([adminRole.id]);
 
-    await user.save();
 
   }
 }
 
-module.exports = UserSeeder;
+module.exports = D_UserSeeder;

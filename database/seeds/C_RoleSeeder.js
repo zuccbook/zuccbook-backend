@@ -2,7 +2,7 @@
 
 /*
 |--------------------------------------------------------------------------
-| ARoleSeeder
+| C_RoleSeeder
 |--------------------------------------------------------------------------
 |
 | Make use of the Factory instance to seed database with dummy data or
@@ -14,14 +14,14 @@
 const Factory = use('Factory')
 const Role = use("App/Models/Role");
 const RolePermission = use("App/Models/RolePermission");
-class ARoleSeeder {
+class C_RoleSeeder {
   async run () {
     let groupNames = ["User", "Moderator", "Admin"];
 
     let groupPermissions =
       [
-        [35],
-        [2, 3, 4, 5, 35, 36, 37, 38, 39],
+        [5],
+        [2, 3, 4, 5],
         [1]
       ];
 
@@ -35,7 +35,6 @@ class ARoleSeeder {
 
       await role.save();
 
-      //TODO: Add permissioms to the group
       const getRole = await Role.findBy("name", groupNames[i]);
 
       for(let j = 0; j < groupPermissions[i].length; j++){
@@ -52,4 +51,4 @@ class ARoleSeeder {
   }
 }
 
-module.exports = ARoleSeeder
+module.exports = C_RoleSeeder

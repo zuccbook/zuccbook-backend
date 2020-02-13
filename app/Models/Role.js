@@ -4,9 +4,6 @@
 const Model = use('Model')
 
 class Role extends Model {
-  static get table () {
-    return 'roles'
-  }
 
   static get createdAtColumn () {
     return null;
@@ -15,6 +12,16 @@ class Role extends Model {
   static get updatedAtColumn () {
     return null;
   }
+  users() {
+    return this.belongsToMany("App/Models/User")
+      .pivotModel("App/Models/UserRole");
+  }
+
+  permissions() {
+    return this.belongsToMany("App/Models/Permission")
+      .pivotModel("App/Models/PermissionRole");
+  }
+
 }
 
 module.exports = Role
