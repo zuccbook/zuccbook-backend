@@ -1,10 +1,14 @@
 'use strict';
 
+const fs = use('fs')
 const {validate} = use('Validator');
+const fileutil = require('../../util/FileUtil')
 
 const User = use("App/Models/User");
 const Role = use("App/Models/Role");
+const UserAvatar = use("App/Models/UserAvatar");
 const PrivacySetting = use("App/Models/PrivacySetting");
+const Helpers = use('Helpers')
 
 const Hash = use('Hash');
 
@@ -54,6 +58,16 @@ class UserController {
     const userRole = await Role.findBy("slug", "user");
 
     await user.Roles().attach([userRole.id]);
+
+    fs.mkdirSync("../../store/user/"+user.id);
+
+    let path = "/"+user.id+"/"+`/${new Date().getTime()}.png`;
+    await fileutil.move('../../store/default/account.png', "../../store/user"+path);
+
+    UserAvatar.user_id = user.id;
+    UserAvatar.path = path;
+    UserAvatar.isCurrentAvatar = 1;
+    UserAvatar.save();
 
     return response.status(200).json({
       status: "Success",
@@ -203,6 +217,7 @@ class UserController {
     const id = auth.user.id
     console.log(id)
 
+
     const user = await User.query()
       .innerJoin('role_user', 'role_user.user_id', 'users.id')
       .innerJoin('roles', 'roles.id','role_user.role_id')
@@ -261,6 +276,49 @@ class UserController {
     return response.status(200).json({
       status: "Success",
       data: user
+    });
+  }
+  async changeProfilePicture({request, auth, response}) {
+    const profilePic = request.file('profile_pic', {
+      types: ['image'],
+      size: '2mb',
+      extnames: ['png', 'gif']
+
+    })
+
+    if(!profilePic){
+      return response.status(400).json({
+        status: "error",
+        message: "no file!"
+      });
+    }
+
+    await profilePic.move(Helpers.tmpPath('uploads'), {
+      name: `${new Date().getTime()}.${profilePic.subtype}`,
+      overwrite: true
+    })
+
+
+    if (!profilePic.moved()) {
+      return response.status(500).json({
+        status: "error",
+        message: profilePic.error()
+      });
+
+    }
+
+
+    await fileutil.move(profilePic.path, "../../store/user/"+request.id+"/"+profilePic.path)
+    UserAvatar.query().where("user_id"+request.id).where("isCurrentAvatar",1).update({isCurrentAvatar:0})
+
+    UserAvatar.user_id = request.id
+    UserAvatar.path ="/"+request.id+"/"+profilePic.path
+    UserAvatar.isCurrentAvatar = 1;
+    UserAvatar.save();
+
+    return response.status(200).json({
+      status: "Success",
+      message: 'updated profile picture!'
     });
   }
 }

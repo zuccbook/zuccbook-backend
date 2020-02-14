@@ -7,7 +7,7 @@ class MediaController {
   async getUserAvatar({request, params, auth, response}) {
     const image = await UserAvatar.query().where("path",params.path).first()
 
-    return await fs.readFile("../"+image.path)
+    return await fs.readFile("../../store/user"+image.path)
   }
 }
 

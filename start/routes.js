@@ -42,3 +42,8 @@ Route.get("/user", "UserController.getSelf").middleware(["spoofAccept", "auth"])
 
 Route.get("/user/search", "UserController.search").middleware(["spoofAccept", "auth"]);
 
+/** ----------------------------------------------------------------
+ *                         USER ROUTES
+ * ----------------------------------------------------------------
+ */
+Route.get("/media/avatar/:path", "MediaController.getUserAvatar").middleware(["spoofAccept", "auth"]);
