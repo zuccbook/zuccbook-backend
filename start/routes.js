@@ -46,4 +46,4 @@ Route.get("/user/search", "UserController.search").middleware(["spoofAccept", "a
  *                         USER ROUTES
  * ----------------------------------------------------------------
  */
-Route.get("/media/avatar/:path", "MediaController.getUserAvatar").middleware(["spoofAccept", "auth"]);
+Route.get("/media/avatar/:userid/:image", "MediaController.getUserAvatar").middleware(["spoofAccept"]);

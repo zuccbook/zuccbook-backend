@@ -5,7 +5,7 @@ const Model = use('Model')
 
 class UserAvatar extends Model {
   static get table () {
-    return 'user_avatar'
+    return 'user_avatars'
   }
 
   static get createdAtColumn () {
@@ -14,6 +14,12 @@ class UserAvatar extends Model {
 
   static get updatedAtColumn () {
     return null;
+  }
+
+  Users() {
+    return this.belongsToMany("App/Models/User")
+      .pivotModel("App/Models/PrivacySetting");
+
   }
 }
 

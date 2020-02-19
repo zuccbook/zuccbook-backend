@@ -2,7 +2,7 @@
 
 const fs = use('fs')
 const {validate} = use('Validator');
-const fileutil = require('../../util/FileUtil')
+const FileUtil = require('../../util/FileUtil')
 
 const User = use("App/Models/User");
 const Role = use("App/Models/Role");
@@ -59,15 +59,19 @@ class UserController {
 
     await user.Roles().attach([userRole.id]);
 
-    fs.mkdirSync("../../store/user/"+user.id);
+    fs.mkdirSync("./store/user/"+user.id);
 
     let path = "/"+user.id+"/"+`/${new Date().getTime()}.png`;
-    await fileutil.move('../../store/default/account.png', "../../store/user"+path);
+    FileUtil.copy('./store/default/account.png', "./store/user"+path, (err) => {
+      if (err) return err;
 
-    UserAvatar.user_id = user.id;
-    UserAvatar.path = path;
-    UserAvatar.isCurrentAvatar = 1;
-    UserAvatar.save();
+    });
+
+    const userAvatar = new UserAvatar();
+    userAvatar.user_id = user.id;
+    userAvatar.path = path;
+    userAvatar.isCurrentAvatar = 1;
+    userAvatar.save();
 
     return response.status(200).json({
       status: "Success",
@@ -215,7 +219,6 @@ class UserController {
 
   async getSelf({request, auth, response}) {
     const id = auth.user.id
-    console.log(id)
 
 
     const user = await User.query()
@@ -223,7 +226,6 @@ class UserController {
       .innerJoin('roles', 'roles.id','role_user.role_id')
       .innerJoin('user_avatars', 'user_avatars.user_id', 'users.id')
       .where("users.id", id).first()
-      console.log(user)
 
     if (!user) {
       return response.status(404).json({
@@ -263,8 +265,8 @@ class UserController {
 
 
     }
-    const user = await User.query().where('firstname', 'LIKE', q+'%')
-      .innerJoin("users_avatars as ua","ua.id", "users.id").fetch()
+    const user = await User.query().select('users.id', 'users.firstname', 'users.lastname', 'ua.path').innerJoin("user_avatars as ua","ua.user_id", "users.id").where('firstname', 'LIKE', q+'%')
+     .fetch()
 
     if (!user) {
       return response.status(404).json({
@@ -282,7 +284,7 @@ class UserController {
     const profilePic = request.file('profile_pic', {
       types: ['image'],
       size: '2mb',
-      extnames: ['png', 'gif']
+      extnames: ['png','jpg', 'jfif', 'gif']
 
     })
 
@@ -308,13 +310,16 @@ class UserController {
     }
 
 
-    await fileutil.move(profilePic.path, "../../store/user/"+request.id+"/"+profilePic.path)
+    await FileUtil.move(profilePic.path, "../../store/user/"+request.id+"/"+profilePic.path)
     UserAvatar.query().where("user_id"+request.id).where("isCurrentAvatar",1).update({isCurrentAvatar:0})
 
-    UserAvatar.user_id = request.id
-    UserAvatar.path ="/"+request.id+"/"+profilePic.path
-    UserAvatar.isCurrentAvatar = 1;
-    UserAvatar.save();
+
+    const userAvatar = new UserAvatar();
+
+    userAvatar.user_id = request.id
+    userAvatar.path ="/"+request.id+"/"+profilePic.path
+    userAvatar.isCurrentAvatar = 1;
+    userAvatar.save();
 
     return response.status(200).json({
       status: "Success",
