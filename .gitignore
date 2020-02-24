@@ -108,4 +108,5 @@ dist
 
 #extra
 store/user
+tmp/
 
