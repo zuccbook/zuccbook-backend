@@ -34,16 +34,39 @@ Route.post("/user/login", "UserController.login").middleware(["spoofAccept", "gu
 
 Route.post( "/user/comparepassword", "UserController.comparePassword").middleware(["spoofAccept", "auth"]);
 
-Route.get("/users/:id", "UserController.getOne").middleware(["spoofAccept", "auth"]);
+Route.get("/user/:id", "UserController.getOne").middleware(["spoofAccept", "auth"]);
 
 Route.get("/users", "UserController.getAll").middleware(["spoofAccept", "auth",]);
 
 Route.get("/user", "UserController.getSelf").middleware(["spoofAccept", "auth"]);
 
-Route.get("/user/search", "UserController.search").middleware(["spoofAccept", "auth"]);
+Route.get("/users/search", "UserController.search").middleware(["spoofAccept", "auth"]);
+
+Route.post("/user/changeavatar", "UserController.changeProfilePicture").middleware(["spoofAccept", "auth"]);
+
+Route.get("/users/avatars/:userid", "UserController.getAllAvatars").middleware(["spoofAccept", "auth"]);
+
 
 /** ----------------------------------------------------------------
- *                         USER ROUTES
+ *                         MEDIA ROUTES
  * ----------------------------------------------------------------
  */
+
+
 Route.get("/media/avatar/:userid/:image", "MediaController.getUserAvatar").middleware(["spoofAccept"]);
+
+
+
+
+
+/** ----------------------------------------------------------------
+ *                         FRIEND ROUTES
+ * ----------------------------------------------------------------
+ */
+
+
+Route.post("/friends/request/send", "FriendController.sendFriendRequest").middleware(["spoofAccept", "auth"]);
+
+Route.post("/friends/relation", "FriendController.getRelations").middleware(["spoofAccept", "auth"]);
+
+

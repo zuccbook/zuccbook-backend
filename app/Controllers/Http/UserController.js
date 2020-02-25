@@ -3,9 +3,11 @@
 const fs = use('fs')
 const {validate} = use('Validator');
 const FileUtil = require('../../util/FileUtil')
+const moveFile = require('move-file');
 
 const User = use("App/Models/User");
 const Role = use("App/Models/Role");
+const UserRole = use("App/Models/UserRole")
 const UserAvatar = use("App/Models/UserAvatar");
 const PrivacySetting = use("App/Models/PrivacySetting");
 const Helpers = use('Helpers')
@@ -59,10 +61,10 @@ class UserController {
 
     await user.Roles().attach([userRole.id]);
 
-    fs.mkdirSync("./store/user/"+user.id);
+    fs.mkdirSync("./store/users/"+user.id);
 
     let path = "/"+user.id+"/"+`/${new Date().getTime()}.png`;
-    FileUtil.copy('./store/default/account.png', "./store/user"+path, (err) => {
+    FileUtil.copy('./store/default/account.png', "./store/users"+path, (err) => {
       if (err) return err;
 
     });
@@ -75,7 +77,7 @@ class UserController {
 
     return response.status(200).json({
       status: "Success",
-      message: "The user was successfully created."
+      message: "The users was successfully created."
     });
   }
 
@@ -125,7 +127,7 @@ class UserController {
 
     return response.status(200).json({
       status: "Success",
-      message: "The user was successfully updated."
+      message: "The users was successfully updated."
     });
   }
 
@@ -143,15 +145,19 @@ class UserController {
 
     return response.status(200).json({
       status: "Success",
-      message: "The user was successfully deleted."
+      message: "The users was successfully deleted."
     });
   }
 
   async getOne({request, params, auth, response}) {
-    const user = await User.query()
-      .innerJoin('privacy_settings', "privacy_settings.user_id",'users.id')
-      .innerJoin('user_avatars', 'user_avatars.user_id', 'users.id')
+    const db_user = await User.query()
       .where("users.id",params.id).first()
+    const userAvatar = await UserAvatar.query().where('user_id', db_user.id).where('isCurrentAvatar',1).first()
+    const privacySettings = await PrivacySetting.query().where('user_id', db_user.id).first()
+    const user = JSON.parse(JSON.stringify(db_user));
+    user.avatar = userAvatar;
+    user.privacy = privacySettings;
+    console.log(user)
 
     if (!user) {
       return response.status(404).json({
@@ -162,7 +168,7 @@ class UserController {
 
     return response.status(200).json({
       status: "Success",
-      message: "The user was successfully found.",
+      message: "The users was successfully found.",
       data: user
     });
   }
@@ -173,7 +179,7 @@ class UserController {
     if (!users) {
       return response.status(404).json({
         status: "Error",
-        message: "Could not get the users"
+        message: "Could not get users"
       });
     }
 
@@ -221,21 +227,26 @@ class UserController {
     const id = auth.user.id
 
 
-    const user = await User.query()
-      .innerJoin('role_user', 'role_user.user_id', 'users.id')
-      .innerJoin('roles', 'roles.id','role_user.role_id')
-      .innerJoin('user_avatars', 'user_avatars.user_id', 'users.id')
-      .where("users.id", id).first()
+    const db_user = await User.query().where("id", id).first()
+    const userAvatar = await UserAvatar.query().where('user_id', db_user.id).where('isCurrentAvatar',1).first()
+    const userRoles = await UserRole.query().where('user_id', db_user.id).first()
+    const Roles = await Role.query().where('id',userRoles.role_id).first()
+    const user = JSON.parse(JSON.stringify(db_user));
+    user.avatar =  JSON.parse(JSON.stringify(userAvatar));
+    user.roles  = JSON.parse(JSON.stringify(userRoles))
+    user.roles.role  = JSON.parse(JSON.stringify(Roles))
+
+
 
     if (!user) {
       return response.status(404).json({
         status: "Error",
-        message: "Could not find the specified user."
+        message: "Could not find get user."
       });
     }
     return response.status(200).json({
       status: "Success",
-      message: "The user was successfully found.",
+      message: "The users was successfully found.",
       data: user
     });
   }
@@ -265,13 +276,17 @@ class UserController {
 
 
     }
-    const user = await User.query().select('users.id', 'users.firstname', 'users.lastname', 'ua.path').innerJoin("user_avatars as ua","ua.user_id", "users.id").where('firstname', 'LIKE', q+'%')
+    const db_user = await User.query().where('firstname', 'LIKE', q+'%')
      .fetch()
+    const userAvatar = UserAvatar.query().where('user_id', db_user.id).where('isCurrentAvatar',1)
+    const user = JSON.parse(JSON.stringify(db_user));;
+    user.avatar = userAvatar;
+    console.log(user)
 
     if (!user) {
       return response.status(404).json({
         status: "Error",
-        message: "Could not find the specified user."
+        message: "Could not find the could not find any user"
       });
     }
 
@@ -281,7 +296,9 @@ class UserController {
     });
   }
   async changeProfilePicture({request, auth, response}) {
-    const profilePic = request.file('profile_pic', {
+    const { userid } = request.all();
+
+    const profilePic = request.file('image', {
       types: ['image'],
       size: '2mb',
       extnames: ['png','jpg', 'jfif', 'gif']
@@ -296,7 +313,7 @@ class UserController {
     }
 
     await profilePic.move(Helpers.tmpPath('uploads'), {
-      name: `${new Date().getTime()}.${profilePic.subtype}`,
+      name: profilePic.fileName,
       overwrite: true
     })
 
@@ -308,16 +325,18 @@ class UserController {
       });
 
     }
+    let path = userid+"/"+`${new Date().getTime()}.`+profilePic.subtype;
 
 
-    await FileUtil.move(profilePic.path, "../../store/user/"+request.id+"/"+profilePic.path)
-    UserAvatar.query().where("user_id"+request.id).where("isCurrentAvatar",1).update({isCurrentAvatar:0})
+    await moveFile("./tmp/uploads/"+profilePic.fileName, "./store/user/"+path)
+
+    await UserAvatar.query().where('user_id', userid).where('isCurrentAvatar', 1).update({'isCurrentAvatar': 0})
 
 
     const userAvatar = new UserAvatar();
 
-    userAvatar.user_id = request.id
-    userAvatar.path ="/"+request.id+"/"+profilePic.path
+    userAvatar.user_id = userid
+    userAvatar.path = path
     userAvatar.isCurrentAvatar = 1;
     userAvatar.save();
 
@@ -326,6 +345,24 @@ class UserController {
       message: 'updated profile picture!'
     });
   }
+  async getAllAvatars({request, auth, params, response}) {
+
+    const userAvatars = await UserAvatar.query().where('user_id', params.userid).fetch()
+
+    if(!userAvatars){
+      return response.status(404).json({
+         error:"not found"
+      })
+    }
+
+    return response.status(200).json({
+      success: 'success',
+      avatars: userAvatars
+
+    })
+
+  }
+
 }
 
 module.exports = UserController;

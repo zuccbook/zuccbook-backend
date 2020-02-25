@@ -5,6 +5,7 @@ class EventController {
     this.socket = socket
     this.request = request
   }
+
 }
 
 module.exports = EventController
