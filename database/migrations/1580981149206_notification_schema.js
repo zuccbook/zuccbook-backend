@@ -7,7 +7,7 @@ class NotificationSchema extends Schema {
   up () {
     this.create('notifications', (table) => {
       table.increments()
-      table.string('type').notNullable().unique();
+      table.string('type').notNullable()
       table.uuid('target_id').index()
       table.uuid('sender_id').index()
       table.foreign('target_id').references('id').on('users').onDelete('cascade')

@@ -69,4 +69,6 @@ Route.post("/friends/request/send", "FriendController.sendFriendRequest").middle
 
 Route.post("/friends/relation", "FriendController.getRelations").middleware(["spoofAccept", "auth"]);
 
+Route.post("/friends/request/accept", "FriendController.acceptFriendRequest").middleware(["spoofAccept", "auth"]);
 
+Route.get("/friends/all/:id", "FriendController.getFriends").middleware(["spoofAccept", "auth"]);

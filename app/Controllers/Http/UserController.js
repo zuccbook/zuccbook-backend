@@ -22,7 +22,7 @@ class UserController {
       lastname: "required",
       gender: "required",
       birthday: "required",
-      email: "required|email|unique:users,email",
+      //email: "required|email|unique:users,email",
       password: "required"
     };
 
@@ -61,10 +61,10 @@ class UserController {
 
     await user.Roles().attach([userRole.id]);
 
-    fs.mkdirSync("./store/users/"+user.id);
+    fs.mkdirSync("./store/user/" + user.id);
 
-    let path = "/"+user.id+"/"+`/${new Date().getTime()}.png`;
-    FileUtil.copy('./store/default/account.png', "./store/users"+path, (err) => {
+    let path = "/" + user.id + `/${new Date().getTime()}.png`;
+    FileUtil.copy('./store/default/account.png', "./store/user" + path, (err) => {
       if (err) return err;
 
     });
@@ -151,13 +151,12 @@ class UserController {
 
   async getOne({request, params, auth, response}) {
     const db_user = await User.query()
-      .where("users.id",params.id).first()
-    const userAvatar = await UserAvatar.query().where('user_id', db_user.id).where('isCurrentAvatar',1).first()
+      .where("users.id", params.id).first()
+    const userAvatar = await UserAvatar.query().where('user_id', db_user.id).where('isCurrentAvatar', 1).first()
     const privacySettings = await PrivacySetting.query().where('user_id', db_user.id).first()
     const user = JSON.parse(JSON.stringify(db_user));
     user.avatar = userAvatar;
     user.privacy = privacySettings;
-    console.log(user)
 
     if (!user) {
       return response.status(404).json({
@@ -228,14 +227,14 @@ class UserController {
 
 
     const db_user = await User.query().where("id", id).first()
-    const userAvatar = await UserAvatar.query().where('user_id', db_user.id).where('isCurrentAvatar',1).first()
+    const userAvatar = await UserAvatar.query().where('user_id', db_user.id).where('isCurrentAvatar', 1).first()
     const userRoles = await UserRole.query().where('user_id', db_user.id).first()
-    const Roles = await Role.query().where('id',userRoles.role_id).first()
+    const Roles = await Role.query().where('id', userRoles.role_id).first()
     const user = JSON.parse(JSON.stringify(db_user));
-    user.avatar =  JSON.parse(JSON.stringify(userAvatar));
-    user.roles  = JSON.parse(JSON.stringify(userRoles))
-    user.roles.role  = JSON.parse(JSON.stringify(Roles))
-
+    delete user.password
+    user.avatar = JSON.parse(JSON.stringify(userAvatar));
+    user.roles = JSON.parse(JSON.stringify(userRoles))
+    user.roles.role = JSON.parse(JSON.stringify(Roles))
 
 
     if (!user) {
@@ -268,7 +267,7 @@ class UserController {
 
   async search({request, auth, response}) {
     const {q} = request.only(['q'])
-    if(q === ''){
+    if (q === '') {
       return response.status(400).json({
         status: "Error",
         message: "Missing query."
@@ -276,14 +275,15 @@ class UserController {
 
 
     }
-    const db_user = await User.query().where('firstname', 'LIKE', q+'%')
-     .fetch()
-    const userAvatar = UserAvatar.query().where('user_id', db_user.id).where('isCurrentAvatar',1)
-    const user = JSON.parse(JSON.stringify(db_user));;
-    user.avatar = userAvatar;
-    console.log(user)
+    const db_users = await User.query().where('firstname', 'LIKE', q + '%').fetch()
+    const users = JSON.parse(JSON.stringify(db_users));
+    for (let u of users) {
+      const userAvatar = await UserAvatar.query().where('user_id', u.id).where('isCurrentAvatar', 1).first();
+      u.avatar = userAvatar;
+      delete u.password
 
-    if (!user) {
+    }
+    if (!users) {
       return response.status(404).json({
         status: "Error",
         message: "Could not find the could not find any user"
@@ -292,20 +292,21 @@ class UserController {
 
     return response.status(200).json({
       status: "Success",
-      data: user
+      data: users,
     });
   }
+
   async changeProfilePicture({request, auth, response}) {
-    const { userid } = request.all();
+    const {userid} = request.all();
 
     const profilePic = request.file('image', {
       types: ['image'],
       size: '2mb',
-      extnames: ['png','jpg', 'jfif', 'gif']
+      extnames: ['png', 'jpg', 'jfif', 'gif']
 
     })
 
-    if(!profilePic){
+    if (!profilePic) {
       return response.status(400).json({
         status: "error",
         message: "no file!"
@@ -325,33 +326,42 @@ class UserController {
       });
 
     }
-    let path = userid+"/"+`${new Date().getTime()}.`+profilePic.subtype;
+    let path = userid + "/" + `${new Date().getTime()}.` + profilePic.subtype;
 
 
-    await moveFile("./tmp/uploads/"+profilePic.fileName, "./store/user/"+path)
+    await moveFile("./tmp/uploads/" + profilePic.fileName, "./store/user/" + path)
+    try {
+      await UserAvatar.query().where('user_id', userid).where('isCurrentAvatar', 1).update({'isCurrentAvatar': 0})
+      const userAvatar = new UserAvatar();
 
-    await UserAvatar.query().where('user_id', userid).where('isCurrentAvatar', 1).update({'isCurrentAvatar': 0})
+      userAvatar.user_id = userid
+      userAvatar.path = path
+      userAvatar.isCurrentAvatar = 1;
+      userAvatar.save();
 
+    } catch (e) {
+      const userAvatar = new UserAvatar();
 
-    const userAvatar = new UserAvatar();
+      userAvatar.user_id = userid
+      userAvatar.path = path
+      userAvatar.isCurrentAvatar = 1;
+      userAvatar.save();
+    }
 
-    userAvatar.user_id = userid
-    userAvatar.path = path
-    userAvatar.isCurrentAvatar = 1;
-    userAvatar.save();
 
     return response.status(200).json({
       status: "Success",
       message: 'updated profile picture!'
     });
   }
+
   async getAllAvatars({request, auth, params, response}) {
 
     const userAvatars = await UserAvatar.query().where('user_id', params.userid).fetch()
 
-    if(!userAvatars){
+    if (!userAvatars) {
       return response.status(404).json({
-         error:"not found"
+        error: "not found"
       })
     }
 
