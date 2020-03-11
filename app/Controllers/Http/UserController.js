@@ -5,6 +5,9 @@ const {validate} = use('Validator');
 const FileUtil = require('../../util/FileUtil')
 const moveFile = require('move-file');
 
+const readChunk = require('read-chunk');
+const imageType = require('image-type');
+
 const User = use("App/Models/User");
 const Role = use("App/Models/Role");
 const UserRole = use("App/Models/UserRole")
@@ -22,7 +25,7 @@ class UserController {
       lastname: "required",
       gender: "required",
       birthday: "required",
-      //email: "required|email|unique:users,email",
+      email: "required|email|unique:users,email",
       password: "required"
     };
 
@@ -155,6 +158,7 @@ class UserController {
     const userAvatar = await UserAvatar.query().where('user_id', db_user.id).where('isCurrentAvatar', 1).first()
     const privacySettings = await PrivacySetting.query().where('user_id', db_user.id).first()
     const user = JSON.parse(JSON.stringify(db_user));
+    delete user.password;
     user.avatar = userAvatar;
     user.privacy = privacySettings;
 
@@ -290,6 +294,7 @@ class UserController {
       });
     }
 
+
     return response.status(200).json({
       status: "Success",
       data: users,
@@ -318,6 +323,21 @@ class UserController {
       overwrite: true
     })
 
+    const buffer = readChunk.sync("./tmp/uploads/"+profilePic.fileName, 0, 12);
+    const result = imageType(buffer);
+    if(!result){
+      fs.unlink('./tmp/uploads/'+profilePic.fileName, (err) => {
+        if(err){
+          console.log(err)
+        }
+      })
+      return response.status(400).json({
+        message:"not an image"
+      })
+    }
+
+
+
 
     if (!profilePic.moved()) {
       return response.status(500).json({
@@ -328,8 +348,8 @@ class UserController {
     }
     let path = userid + "/" + `${new Date().getTime()}.` + profilePic.subtype;
 
-
     await moveFile("./tmp/uploads/" + profilePic.fileName, "./store/user/" + path)
+
     try {
       await UserAvatar.query().where('user_id', userid).where('isCurrentAvatar', 1).update({'isCurrentAvatar': 0})
       const userAvatar = new UserAvatar();
