@@ -6,11 +6,10 @@ const Schema = use('Schema')
 class PostLikesSchema extends Schema {
   up () {
     this.create('post_likes', (table) => {
-      table.increments()
-      table.uuid('user_id').index()
+      table.uuid('user_id',6).primary().index()
+      table.foreign('post_id').references('id').on('posts').onDelete('cascade')
       table.integer('post_id',10).unsigned().index()
       table.foreign('user_id').references('id').on('users').onDelete('cascade')
-      table.foreign('post_id').references('id').on('posts').onDelete('cascade')
     })
   }
 

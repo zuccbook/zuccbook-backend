@@ -54,6 +54,8 @@ Route.get("/users/avatars/:userid", "UserController.getAllAvatars").middleware([
 
 
 Route.get("/media/avatar/:userid/:image", "MediaController.getUserAvatar").middleware(["spoofAccept"]);
+Route.get("/media/post/:postid/:file", "MediaController.getPostFile").middleware(["spoofAccept"]);
+
 
 
 
@@ -72,3 +74,19 @@ Route.post("/friends/relation", "FriendController.getRelations").middleware(["sp
 Route.post("/friends/request/accept", "FriendController.acceptFriendRequest").middleware(["spoofAccept", "auth"]);
 
 Route.get("/friends/all/:id", "FriendController.getFriends").middleware(["spoofAccept", "auth"]);
+
+
+/** ----------------------------------------------------------------
+ *                         POST ROUTES
+ * ----------------------------------------------------------------
+ */
+
+Route.post("/post/create", "PostController.createPost").middleware(["spoofAccept", "auth"]);
+
+Route.get("/posts/get", "PostController.getPosts").middleware(["spoofAccept", "auth"]);
+
+Route.get("/post/get", "PostController.getPost").middleware(["spoofAccept", "auth"]);
+
+Route.post('/post/comment/create','PostController.commentPost').middleware(['spoofAccept',"auth"])
+
+Route.get('/post/comments/:postId','PostController.getComments').middleware(['spoofAccept','auth'])

@@ -8,8 +8,8 @@ class NotificationSchema extends Schema {
     this.create('notifications', (table) => {
       table.increments()
       table.string('type').notNullable()
-      table.uuid('target_id').index()
-      table.uuid('sender_id').index()
+      table.uuid('target_id',6).index()
+      table.uuid('sender_id',6).index()
       table.foreign('target_id').references('id').on('users').onDelete('cascade')
       table.foreign('sender_id').references('id').on('users').onDelete('cascade')
     })

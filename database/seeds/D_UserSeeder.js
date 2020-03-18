@@ -12,9 +12,12 @@
 
 /** @type {import('@adonisjs/lucid/src/Factory')} */
 const Factory = use('Factory');
-
+const fs = require('fs')
+const FileUtil = require('../../app/util/FileUtil')
 const User = use("App/Models/User");
 const Role = use("App/Models/Role");
+const UserAvatar = use("App/Models/UserAvatar");
+
 
 
 class D_UserSeeder {
@@ -36,6 +39,19 @@ class D_UserSeeder {
     const adminRole = await Role.findBy("slug", "admin");
 
     await findUser.Roles().attach([adminRole.id]);
+    fs.mkdirSync("./store/user/" + user.id);
+
+    let path = "/" + user.id + `/${new Date().getTime()}.png`;
+    FileUtil.copy('./store/default/account.png', "./store/user" + path, (err) => {
+      if (err) return err;
+
+    });
+
+    const userAvatar = new UserAvatar();
+    userAvatar.user_id = user.id;
+    userAvatar.path = path;
+    userAvatar.isCurrentAvatar = 1;
+    userAvatar.save();
 
 
   }

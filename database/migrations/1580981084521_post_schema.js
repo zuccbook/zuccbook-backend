@@ -8,8 +8,8 @@ class PostSchema extends Schema {
     this.create('posts', (table) => {
        table.increments().notNullable
        table.string('text').notNullable();
-       table.date('dateposted').notNullable();
-       table.uuid('poster_id').index()
+       table.dateTime('dateposted').notNullable();
+       table.uuid('poster_id',6).index()
        table.foreign('poster_id').references('id').on('users').onDelete('cascade')
     })
   }

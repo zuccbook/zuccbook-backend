@@ -8,7 +8,8 @@ class CommentsSchema extends Schema {
     this.create('comments', (table) => {
       table.increments()
       table.string("comment_content")
-      table.uuid('users_id').index()
+      table.dateTime('dateposted').notNullable();
+      table.uuid('users_id',6).index()
       table.integer('post_id',10).unsigned().index()
       table.foreign('users_id').references('id').on('users').onDelete('cascade')
       table.foreign('post_id').references('id').on('posts').onDelete('cascade')

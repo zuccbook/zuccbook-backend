@@ -8,7 +8,7 @@ class UserAvatarSchema extends Schema {
     this.create('user_avatars', (table) => {
       table.increments()
       table.string('path').notNullable()
-      table.uuid('user_id').index()
+      table.uuid('user_id',6).index()
       table.foreign('user_id').references('id').on('users').onDelete('cascade')
       table.integer('isCurrentAvatar').notNullable
     })

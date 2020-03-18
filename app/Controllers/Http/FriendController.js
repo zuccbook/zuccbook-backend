@@ -91,7 +91,6 @@ class FriendController {
       }else if(friend.user_id_2 === params.id){
          user = await User.query().where("id", friend.user_id_1).first()
       }
-      console.log(friend.user_id_2)
       friend.user =  JSON.parse(JSON.stringify(user));
       const userAvatar = await UserAvatar.query().where("user_id", user.id).where('isCurrentAvatar',1).first()
       friend.user.avatar = JSON.parse(JSON.stringify(userAvatar));
@@ -100,7 +99,7 @@ class FriendController {
 
     }
 
-    if(!data){
+    if(friends.length === 0){
       return response.status(404).json({
         status: "Error",
         message: "No friends"

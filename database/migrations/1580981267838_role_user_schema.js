@@ -9,7 +9,7 @@ class UserRolesSchema extends Schema {
       table.increments()
       table.integer('role_id').unsigned().index()
       table.foreign('role_id').references('id').on('roles').onDelete('cascade')
-      table.uuid('user_id').index()
+      table.uuid('user_id',6).index()
       table.foreign('user_id').references('id').on('users').onDelete('cascade')
     })
   }
@@ -21,7 +21,7 @@ class UserRolesSchema extends Schema {
       table.dropForeign('user_id');
     })
 
-    this.drop('user_roles')
+    this.drop('role_user')
 
   }
 }

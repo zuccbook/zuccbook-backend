@@ -108,5 +108,6 @@ dist
 
 #extra
 store/user
+store/post
 tmp/
 
