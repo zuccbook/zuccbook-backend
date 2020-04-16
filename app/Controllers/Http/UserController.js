@@ -311,6 +311,7 @@ class UserController {
 
     })
 
+
     if (!profilePic) {
       return response.status(400).json({
         status: "error",
@@ -323,6 +324,13 @@ class UserController {
       overwrite: true
     })
 
+    if (!profilePic.moved()) {
+      return response.status(500).json({
+        status: "error",
+        message: profilePic.error().message
+      });
+
+    }
     const buffer = readChunk.sync("./tmp/uploads/"+profilePic.fileName, 0, 12);
     const result = imageType(buffer);
     if(!result){
@@ -338,14 +346,6 @@ class UserController {
 
 
 
-
-    if (!profilePic.moved()) {
-      return response.status(500).json({
-        status: "error",
-        message: profilePic.error()
-      });
-
-    }
     let path = userid + "/" + `${new Date().getTime()}.` + profilePic.subtype;
 
     await moveFile("./tmp/uploads/" + profilePic.fileName, "./store/user/" + path)

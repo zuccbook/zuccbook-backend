@@ -32,15 +32,15 @@ class PostController {
       for (let file of files) {
         try {
           let postFile = request.file(file, {
-            types: ['image','video'],
+            types: ['image', 'video'],
             size: '5mb',
-            extnames: ['png', 'jpg', 'jfif', 'gif','mp4']
+            extnames: ['png', 'jpg', 'jfif', 'gif', 'mp4']
 
           });
           if (postFile) {
             uploadFiles.push(postFile)
           }
-        }catch (e) {
+        } catch (e) {
 
         }
 
@@ -60,7 +60,6 @@ class PostController {
           });
         }
       }
-
 
 
       const post = new Post()
@@ -124,179 +123,423 @@ class PostController {
   }
 
   async deletePost({request, params, auth, response}) {
+    const body = request.only(['postId'])
+    console.log(body)
+    if (!body) {
+      return response.status(400).json({
+        status: 'bad request',
+        message: "Body can't be empty!"
+      })
+
+    }
+    try {
+
+      const postDislikes = await Postdislike.query().where('post_id', body.postId).fetch()
+      const dislikes = JSON.parse(JSON.stringify(postDislikes))
+      if (Postdislike.length !== 0) {
+        for (let dislike of dislikes) {
+          await Postdislike.query().where('id', dislike.id).delete()
+        }
+      }
+      const postLikes = await Postlike.query().where('post_id', body.postId).fetch()
+      const likes = JSON.parse(JSON.stringify(postLikes))
+      if (Postlike.length !== 0) {
+        for (let like of likes) {
+          await Postlike.query().where('id', likes.id).delete()
+        }
+      }
+      const postFiles = await PostImage.query().where('post_id', body.postId).fetch()
+      const files = JSON.parse(JSON.stringify(postFiles))
+      console.log(files)
+      if (postFiles.length !== 0) {
+        for (let file of files) {
+          fs.unlink('./store/post/' + file.path, (err) => {
+            if (err) {
+              return err
+              console.log(err)
+            }
+          })
+          await PostImage.query().where('id', file.id).delete()
+        }
+      }
+      const postComments = await PostComment.query().where('post_id', body.postId).fetch()
+      const Comments = JSON.parse(JSON.stringify(postComments))
+      if (Comments.length !== 0) {
+        for (let comment of Comments) {
+          await PostComment.query().where('id', comment.id).delete()
+        }
+      }
+
+      await Post.query().where('id', body.postId).delete()
+      return response.status(200).json({
+        status: 'success',
+        message: 'post successfully deleted!'
+      })
+
+    } catch (e) {
+      console.log(e)
+      return response.status(500).json({
+        status: 'error',
+        message: "Something bad happened, couldn't delete post"
+      })
+    }
 
   }
 
   async likePost({request, params, auth, response}) {
+    const body = request.only(['postId', 'userId','senderId'])
+    console.log(body)
+    if(!body){
+      return response.status(400).json({
+        status: 'error',
+        message: 'body empty'
+      })
+    }
+    try {
+      const likePost = new Postlike()
+      likePost.user_id = body.userId
+      likePost.post_id = body.postId
+      await likePost.save()
+     if(body.userId !== auth.user.id){
+       const notification = new Notification()
+       notification.type = 'POST_LIKED'
+       notification.target_id = body.userId
+       notification.sender_id = body.senderId
+
+       await notification.save();
+     }
+
+      return response.status(200).json({
+        status: 'success',
+        message: 'liked post'
+      })
+
+    } catch (e) {
+      console.log(e)
+      return response.status(500).json({
+        status: 'error',
+        message: 'Error happened'
+      })
+
+    }
+
+  }
+  async unlikePost({request, params, auth, response}) {
+    const body = request.only(['userId','postId'])
+    if(!body){
+      return response.status(400).json({
+        status: 'error',
+        message: 'body is empty'
+      })
+    }
+    try{
+
+      await Postlike.query().where('user_id',body.userId).where('post_id',body.postId).delete()
+
+    }catch (e) {
+      console.log(e)
+      return response.status(500).json({
+        status: 'error',
+        message: 'error happened'
+      })
+    }
 
   }
 
   async dislikePost({request, params, auth, response}) {
+    const body = request.only(['postId', 'userId','senderId'])
+    try {
+      const dislikePost = new Postdislike()
+      dislikePost.user_id = body.userId
+      dislikePost.post_id = body.postId
+      await dislikePost.save()
+      if(body.userId !== auth.user.id){
+        const notification = new Notification()
+        notification.type = 'POST_DISLIKED'
+        notification.target_id = body.userId
+        notification.sender_id = body.senderId
+        await notification.save();
+
+      }
+      return response.status(200).json({
+        status: 'success',
+        message: 'liked post'
+      })
+
+    } catch (e) {
+      return response.status(500).json({
+        status: 'error',
+        message: 'Error happened'
+      })
+
+    }
+  }
+
+  async undislikePost({request, params, auth, response}) {
+    const body = request.only(['userId','postId'])
+    if(!body){
+      return response.status(400).json({
+        status: 'error',
+        message: 'body is empty'
+      })
+    }
+    try{
+
+      await Postdislike.query().where('user_id',body.userId).where('post_id',body.postId).delete()
+
+    }catch (e) {
+      console.log(e)
+      return response.status(500).json({
+        status: 'error',
+        message: 'error happened'
+      })
+    }
 
   }
 
-  async getComments({request,params,auth,response}){
-    if(params.postId === undefined || params.postId === ''){
+  async getComments({request, params, auth, response}) {
+
+    if (params.postId === undefined || params.postId === '') {
       return response.status(400).json({
-        status:'error',
-        message:'cannot be empty'
+        status: 'error',
+        message: 'cannot be empty'
       })
     }
     const comments = await PostComment.query().where("post_id", params.postId).orderBy('dateposted', 'desc').fetch()
-    if(!comments){
+    if (!comments) {
       return response.status(404).json({
-        status:'error',
-        message:'no comments'
+        status: 'error',
+        message: 'no comments'
       })
     }
-    const responeComments = JSON.parse(JSON.stringify(comments))
-    for(let comment of responeComments){
-      let user  = await User.query().where('id', comment.users_id).first()
-      let userAvatar = await UserAvatar.query().where('user_id',user.id).where('isCurrentAvatar',1).first()
+    const responseComments = JSON.parse(JSON.stringify(comments))
+
+    for (let comment of responseComments) {
+      let user = await User.query().where('id', comment.users_id).first()
+      let userAvatar = await UserAvatar.query().where('user_id', user.id).where('isCurrentAvatar', 1).first()
       comment.user = JSON.parse(JSON.stringify(user))
       comment.user.avatar = JSON.parse(JSON.stringify(userAvatar))
     }
     return response.status(200).json({
-      status:'success',
-      data: responeComments
+      status: 'success',
+      data: responseComments
     })
   }
 
   async commentPost({request, params, auth, response}) {
+    const rules = {
+      postId: "required",
+      commentContent: "required",
+      userId: "required",
+      datePosted: "required",
+    };
 
-    const body = request.only(['postId','commentContent','userId', 'datePosted'])
-    const comment = new PostComment()
-    comment.post_id =  body.postId
-    comment.comment_content =  body.commentContent
-    comment.users_id = body.userId
-    comment.dateposted = body.datePosted
-    comment.save();
+    const body = request.only(['postId', 'commentContent', 'userId', 'datePosted'])
+
+    const validation = await validate(body, rules);
+
+    if (validation.fails()) {
+      return response.status(400).json({
+        status: "Error",
+        message: validation.messages()
+      });
+    }
+    try {
+      const comment = new PostComment();
+      comment.post_id = body.postId
+      comment.comment_content = body.commentContent
+      comment.users_id = body.userId
+      comment.dateposted = body.datePosted
+      comment.save();
+    } catch (e) {
+      return response.status(500).json({
+        status: "Error",
+        message: e.message
+      });
+    }
 
     return response.status(200).json({
-      status:'success',
-      message:'comment successfully created'
+      status: 'success',
+      message: 'comment successfully created'
     })
-
   }
-  async getPosts({request, params, auth, response}){
+
+  async getPostsFromSpecificUser({request, params, auth, response}) {
+    if (params.id === undefined && params.id === '') {
+      return response.status(400).json({
+        status: 400,
+        message: 'param is empty or is not set'
+      })
+    }
+    const posts = await Post.query().orWhere('poster_id', params.id).orderBy('dateposted', 'desc').fetch();
+    const responsePosts = JSON.parse(JSON.stringify(posts))
+    for (let post of responsePosts) {
+      const user = await User.query().where('id', post.poster_id).first()
+      const userAvatar = await UserAvatar.query().where('user_id', post.poster_id).where('isCurrentAvatar', 1).first()
+      post.poster = JSON.parse(JSON.stringify(user))
+      post.poster.avatar = JSON.parse(JSON.stringify(userAvatar))
+      delete post.poster.password
+      const postImage = await PostImage.query().where('post_id', post.id).fetch()
+      post.post_files = JSON.parse(JSON.stringify(postImage))
+
+      const postlikes = await Postlike.query().where("post_id", post.id).fetch()
+      let likes = JSON.parse(JSON.stringify(postlikes))
+      if (!postlikes) {
+        for (let like of likes) {
+          const user = await User.query().where("id", like.user_id).first()
+          likes.user = JSON.parse(JSON.stringify(user))
+        }
+      } else {
+        likes = []
+      }
+      const postdislikes = await Postdislike.query().where("post_id", post.id).fetch()
+      let dislikes = JSON.parse(JSON.stringify(postdislikes))
+      if (!postdislikes) {
+        for (let dislike of dislikes) {
+          const user = await User.query().where("id", dislike.user_id).first()
+          dislike.user = JSON.parse(JSON.stringify(user))
+        }
+      } else {
+        dislikes = []
+      }
+      const PostComments = await PostComment.query().count("* as amount").where("post_id", post.id).first()
+      let commentsAmount;
+      if (PostComments !== 0) {
+        commentsAmount = PostComments.amount
+      } else {
+        commentsAmount = 0
+      }
+      post.likes = likes
+      post.dislikes = dislikes
+      post.comments = commentsAmount
+
+    }
+    return response.status(200).json({
+      status: 200,
+      data: responsePosts
+    })
+  }
+
+  async getPosts({request, params, auth, response}) {
 
     let posts;
-    const friends = await Relationship.query().where("status", 1).where("user_id_1", auth.user.id).orWhere("user_id_2", auth.user.id).fetch()
+    const friends = await Relationship.query().where("status", 1).whereRaw("(user_id_1 = ? OR user_id_2 = ?)", [auth.user.id, auth.user.id]).fetch()
     const data = JSON.parse(JSON.stringify(friends))
-    if (data.length !== 0){
+    if (data.length !== 0) {
       for (let friend of data) {
-        if(friend.user_id_1 === auth.user.id){
-          posts = await Post.query().where("poster_id", friend.user_id_2).orWhere('poster_id',auth.user.id).orderBy('dateposted', 'desc').fetch();
-        }else if(friend.user_id_2 === auth.user.id){
-          posts = await Post.query().where("poster_id", friend.user_id_1).orWhere('poster_id',auth.user.id).orderBy('dateposted', 'desc').fetch();
+        if (friend.user_id_1 === auth.user.id) {
+          posts = await Post.query().where("poster_id", friend.user_id_2).orWhere('poster_id', auth.user.id).orderBy('dateposted', 'desc').fetch();
+        } else if (friend.user_id_2 === auth.user.id) {
+          posts = await Post.query().where("poster_id", friend.user_id_1).orWhere('poster_id', auth.user.id).orderBy('dateposted', 'desc').fetch();
 
         }
       }
-        const responsePosts = JSON.parse(JSON.stringify(posts))
-        for(let post of responsePosts) {
-          const user = await User.query().where('id',post.poster_id).first()
-          const userAvatar = await UserAvatar.query().where('user_id',post.poster_id).where('isCurrentAvatar',1).first()
-          post.poster = JSON.parse(JSON.stringify(user))
-          delete post.poster.password
-          post.poster.avatar = JSON.parse(JSON.stringify(userAvatar))
-          const postImage = await PostImage.query().where('post_id',post.id).fetch()
-          post.post_files = JSON.parse(JSON.stringify(postImage))
-
-          const postlikes = await Postlike.query("post_id", post.id).fetch()
-           let likes = JSON.parse(JSON.stringify(postlikes))
-          if (!postlikes) {
-            for (let like of likes) {
-              const user = await User.query().where("id", like.user_id).first()
-              likes.user = JSON.parse(JSON.stringify(user))
-            }
-          }else{
-            likes = []
-          }
-          const postdislikes = await Postdislike.query("post_id", post.id).fetch()
-          let dislikes = JSON.parse(JSON.stringify(postdislikes))
-          if (!postdislikes) {
-            for (let dislike of dislikes) {
-              const user = await User.query().where("id", dislike.user_id).first()
-              dislike.user = JSON.parse(JSON.stringify(user))
-            }
-          }else{
-            dislikes = []
-          }
-          const PostComments = await PostComment.query("post_id", post.id).fetch()
-          let comments = JSON.parse(JSON.stringify(PostComments))
-          if (!PostComments) {
-            for (let comment of comments) {
-              const user = await User.query().where("id", comment.user_id).first()
-              comment.user = JSON.parse(JSON.stringify(user))
-            }
-          }else{
-            comments = []
-          }
-          post.likes = likes
-          post.dislikes = postlikes
-          post.comments = comments
-
-        }
-        return response.status(200).json({
-          status: 200,
-          data:responsePosts
-        })
-
-    }else{
-      posts = await Post.query().orWhere('poster_id', auth.user.id).orderBy('dateposted', 'desc').fetch();
       const responsePosts = JSON.parse(JSON.stringify(posts))
-      for(let post of responsePosts) {
-        const user = await User.query().where('id',post.poster_id).first()
-        const userAvatar = await UserAvatar.query().where('user_id',post.poster_id).where('isCurrentAvatar',1).first()
+      for (let post of responsePosts) {
+        const user = await User.query().where('id', post.poster_id).first()
+        const userAvatar = await UserAvatar.query().where('user_id', post.poster_id).where('isCurrentAvatar', 1).first()
         post.poster = JSON.parse(JSON.stringify(user))
-        post.poster.avatar = JSON.parse(JSON.stringify(userAvatar))
         delete post.poster.password
-        const postImage = await PostImage.query().where('post_id',post.id).fetch()
+        post.poster.avatar = JSON.parse(JSON.stringify(userAvatar))
+        const postImage = await PostImage.query().where('post_id', post.id).fetch()
         post.post_files = JSON.parse(JSON.stringify(postImage))
-        const postlikes = await Postlike.query("post_id", post.id).fetch()
+
+        const postlikes = await Postlike.query().where("post_id", post.id).fetch()
         let likes = JSON.parse(JSON.stringify(postlikes))
-        if (!postlikes) {
+        if (likes.length !== 0) {
           for (let like of likes) {
             const user = await User.query().where("id", like.user_id).first()
-            likes.user = JSON.parse(JSON.stringify(user))
+            like.user = JSON.parse(JSON.stringify(user))
+            delete like.user.password
+
           }
-        }else{
+        } else {
           likes = []
         }
-        const postdislikes = await Postdislike.query("post_id", post.id).fetch()
+        const postdislikes = await Postdislike.query().where("post_id", post.id).fetch()
         let dislikes = JSON.parse(JSON.stringify(postdislikes))
-        if (!postdislikes) {
+        if (dislikes.length !== 0) {
           for (let dislike of dislikes) {
             const user = await User.query().where("id", dislike.user_id).first()
             dislike.user = JSON.parse(JSON.stringify(user))
+            delete dislike.user.password
           }
-        }else{
+        } else {
           dislikes = []
         }
-        const PostComments = await PostComment.query("post_id", post.id).fetch()
-        let comments = JSON.parse(JSON.stringify(PostComments))
-        if (!PostComments) {
-          for (let comment of comments) {
-            const user = await User.query().where("id", comment.user_id).first()
-            comment.user = JSON.parse(JSON.stringify(user))
-          }
-        }else{
-          comments = []
+        const PostComments = await PostComment.query().count("* as amount").where("post_id", post.id).first()
+        let commentsAmount;
+        if (PostComments !== 0) {
+          commentsAmount = PostComments.amount
+        } else {
+          commentsAmount = 0
         }
         post.likes = likes
-        post.dislikes = postlikes
-        post.comments = comments
+        post.dislikes = dislikes
+        post.comments = commentsAmount
 
       }
       return response.status(200).json({
         status: 200,
-        data:responsePosts
+        data: responsePosts
+      })
+
+    } else {
+      posts = await Post.query().orWhere('poster_id', auth.user.id).orderBy('dateposted', 'desc').fetch();
+      const responsePosts = JSON.parse(JSON.stringify(posts))
+      for (let post of responsePosts) {
+        const user = await User.query().where('id', post.poster_id).first()
+        const userAvatar = await UserAvatar.query().where('user_id', post.poster_id).where('isCurrentAvatar', 1).first()
+        post.poster = JSON.parse(JSON.stringify(user))
+        post.poster.avatar = JSON.parse(JSON.stringify(userAvatar))
+        delete post.poster.password
+        const postImage = await PostImage.query().where('post_id', post.id).fetch()
+        post.post_files = JSON.parse(JSON.stringify(postImage))
+
+        const postlikes = await Postlike.query().where("post_id", post.id).fetch()
+        let likes = JSON.parse(JSON.stringify(postlikes))
+        if (likes.length !== 0) {
+          for (let like of likes) {
+            const user = await User.query().where("id", like.user_id).first()
+            like.user = JSON.parse(JSON.stringify(user))
+            delete like.user.password
+
+          }
+        } else {
+          likes = []
+        }
+        const postdislikes = await Postdislike.query().where("post_id", post.id).fetch()
+        let dislikes = JSON.parse(JSON.stringify(postdislikes))
+        if (dislikes.length !== 0) {
+          for (let dislike of dislikes) {
+            const user = await User.query().where("id", dislike.user_id).first()
+            dislike.user = JSON.parse(JSON.stringify(user))
+            delete dislike.user.password
+          }
+        } else {
+          dislikes = []
+        }
+        const PostComments = await PostComment.query().count("* as amount").where("post_id", post.id).first()
+        let commentsAmount;
+        if (PostComments !== 0) {
+          commentsAmount = PostComments.amount
+        } else {
+          commentsAmount = 0
+        }
+        post.likes = likes
+        post.dislikes = dislikes
+        post.comments = commentsAmount
+
+      }
+      return response.status(200).json({
+        status: 200,
+        data: responsePosts
       })
 
     }
   }
 
-  async getPost({request, params, auth, response}){
+  async getPost({request, params, auth, response}) {
     const {id} = request.only(['id'])
     if (id === '') {
       return response.status(400).json({
@@ -304,56 +547,49 @@ class PostController {
         message: "Missing id parameter."
       });
     }
-      let post;
-      post = await Post.query().where('id', id).first();
-      const responsePost = JSON.parse(JSON.stringify(post))
-      const user = await User.query().where('id',post.poster_id).first()
-      const userAvatar = await UserAvatar.query().where('user_id',post.poster_id).where('isCurrentAvatar',1).first()
-      responsePost.poster = JSON.parse(JSON.stringify(user))
-      responsePost.poster.avatar = JSON.parse(JSON.stringify(userAvatar))
-        delete responsePost.poster.password
-        const postImage = await PostImage.query().where('post_id',post.id).fetch()
-      responsePost.post_files = JSON.parse(JSON.stringify(postImage))
-        const postlikes = await Postlike.query("post_id", post.id).fetch()
-        let likes = JSON.parse(JSON.stringify(postlikes))
-        if (!postlikes) {
-          for (let like of likes) {
-            const user = await User.query().where("id", like.user_id).first()
-            likes.user = JSON.parse(JSON.stringify(user))
-          }
-        }else{
-          likes = []
-        }
-        const postdislikes = await Postdislike.query("post_id", post.id).fetch()
-        let dislikes = JSON.parse(JSON.stringify(postdislikes))
-        if (!postdislikes) {
-          for (let dislike of dislikes) {
-            const user = await User.query().where("id", dislike.user_id).first()
-            dislike.user = JSON.parse(JSON.stringify(user))
-          }
-        }else{
-          dislikes = []
-        }
-        const PostComments = await PostComment.query("post_id", post.id).fetch()
-        let comments = JSON.parse(JSON.stringify(PostComments))
-        if (!PostComments) {
-          for (let comment of comments) {
-            const user = await User.query().where("id", comment.user_id).first()
-            comment.user = JSON.parse(JSON.stringify(user))
-          }
-        }else{
-          comments = []
-        }
-      responsePost.likes = likes
-      responsePost.dislikes = postlikes
-      responsePost.comments = comments
+    let post;
+    post = await Post.query().where('id', id).first();
+    const responsePost = JSON.parse(JSON.stringify(post))
+    const user = await User.query().where('id', post.poster_id).first()
+    const userAvatar = await UserAvatar.query().where('user_id', post.poster_id).where('isCurrentAvatar', 1).first()
+    responsePost.poster = JSON.parse(JSON.stringify(user))
+    responsePost.poster.avatar = JSON.parse(JSON.stringify(userAvatar))
+    delete responsePost.poster.password
+    const postImage = await PostImage.query().where('post_id', post.id).fetch()
+    responsePost.post_files = JSON.parse(JSON.stringify(postImage))
+    const postlikes = await Postlike.query().where("post_id", post.id).fetch()
+    let likes = JSON.parse(JSON.stringify(postlikes))
+    if (likes.length !== 0) {
+      for (let like of likes) {
+        console.log(like)
+        const user = await User.query().where("id", like.user_id).first()
+        like.user = JSON.parse(JSON.stringify(user))
+        delete like.user.password
 
-      return response.status(200).json({
-        status: 200,
-        data:responsePost
-      })
-
+      }
+    } else {
+      likes = []
     }
+    const postdislikes = await Postdislike.query().where("post_id", post.id).fetch()
+    let dislikes = JSON.parse(JSON.stringify(postdislikes))
+    if (dislikes.length !== 0) {
+      for (let dislike of dislikes) {
+        const user = await User.query().where("id", dislike.user_id).first()
+        dislike.user = JSON.parse(JSON.stringify(user))
+        delete dislike.user.password
+      }
+    } else {
+      dislikes = []
+    }
+    responsePost.likes = likes
+    responsePost.dislikes = dislikes
+
+    return response.status(200).json({
+      status: 200,
+      data: responsePost
+    })
+
+  }
 
 }
 

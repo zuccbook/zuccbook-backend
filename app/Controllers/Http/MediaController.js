@@ -19,9 +19,9 @@ class MediaController {
   async getPostFile({request, params, auth, response}) {
     let path = '/' + params.postid + '/' + params.file
     const data = await readFile("./store/post" + path)
-    const result = FileType(data);
+    const result = await FileType.fromBuffer(data);
 
-    return response.status(200).header('Content-type', result.mime).send(data)
+    return response.status(200).header('Content-type', result.mime).header('Accept-Ranges','bytes').send(data)
 
 
   }

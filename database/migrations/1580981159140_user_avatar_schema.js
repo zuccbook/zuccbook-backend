@@ -10,7 +10,7 @@ class UserAvatarSchema extends Schema {
       table.string('path').notNullable()
       table.uuid('user_id',6).index()
       table.foreign('user_id').references('id').on('users').onDelete('cascade')
-      table.integer('isCurrentAvatar').notNullable
+      table.integer('isCurrentAvatar').notNullable()
     })
   }
 
