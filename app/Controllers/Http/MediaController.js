@@ -2,10 +2,9 @@
 
 const imageType = require('image-type');
 const FileType = require('file-type');
-
 const fs = use('fs')
 const Helpers = use('Helpers')
-const UserAvatar = use("App/Models/UserAvatar");
+
 const readFile = Helpers.promisify(fs.readFile)
 
 class MediaController {
@@ -25,6 +24,10 @@ class MediaController {
 
 
   }
+
+
+
+
 }
 
 

@@ -7,6 +7,8 @@ const Postdislike = use("App/Models/Postdislike")
 const PostComment = use("App/Models/Comment")
 const PostImage = use("App/Models/Postimage");
 const Relationship = use("App/Models/Relationship")
+const Notification = use("App/Models/Notification")
+
 
 const Helpers = use('Helpers')
 const {validate} = use('Validator');
@@ -188,7 +190,6 @@ class PostController {
 
   async likePost({request, params, auth, response}) {
     const body = request.only(['postId', 'userId','senderId'])
-    console.log(body)
     if(!body){
       return response.status(400).json({
         status: 'error',
@@ -197,10 +198,12 @@ class PostController {
     }
     try {
       const likePost = new Postlike()
-      likePost.user_id = body.userId
+      likePost.user_id = body.senderId
       likePost.post_id = body.postId
       await likePost.save()
-     if(body.userId !== auth.user.id){
+      console.log(body)
+      console.log(body.userId + " : " + auth.user.id)
+      if(body.userId !== auth.user.id){
        const notification = new Notification()
        notification.type = 'POST_LIKED'
        notification.target_id = body.userId
@@ -250,10 +253,10 @@ class PostController {
     const body = request.only(['postId', 'userId','senderId'])
     try {
       const dislikePost = new Postdislike()
-      dislikePost.user_id = body.userId
+      dislikePost.user_id = body.senderId
       dislikePost.post_id = body.postId
       await dislikePost.save()
-      if(body.userId !== auth.user.id){
+      if(body.senderId !== auth.user.id){
         const notification = new Notification()
         notification.type = 'POST_DISLIKED'
         notification.target_id = body.userId
@@ -384,20 +387,23 @@ class PostController {
 
       const postlikes = await Postlike.query().where("post_id", post.id).fetch()
       let likes = JSON.parse(JSON.stringify(postlikes))
-      if (!postlikes) {
+      if (likes.length !== 0) {
         for (let like of likes) {
           const user = await User.query().where("id", like.user_id).first()
-          likes.user = JSON.parse(JSON.stringify(user))
+          like.user = JSON.parse(JSON.stringify(user))
+          delete like.user.password
+
         }
       } else {
         likes = []
       }
       const postdislikes = await Postdislike.query().where("post_id", post.id).fetch()
       let dislikes = JSON.parse(JSON.stringify(postdislikes))
-      if (!postdislikes) {
+      if (dislikes.length !== 0) {
         for (let dislike of dislikes) {
           const user = await User.query().where("id", dislike.user_id).first()
           dislike.user = JSON.parse(JSON.stringify(user))
+          delete dislike.user.password
         }
       } else {
         dislikes = []
@@ -589,6 +595,47 @@ class PostController {
       data: responsePost
     })
 
+  }
+  async getFilesPostedByUser({request, params, auth, response}){
+
+    if(!params.id){
+      return response.status(400).json({
+        status: 'bad request',
+        message: 'parameter is missing'
+      })
+    }
+    try{
+      const databasePosts = await Post.query().where('poster_id',params.id).fetch()
+      const posts = JSON.parse(JSON.stringify(databasePosts))
+      const Files = []
+
+      for(let post of posts){
+        const postFiles = await PostImage.query().where('post_id',post.id).fetch()
+        const files = JSON.parse(JSON.stringify(postFiles))
+        if(files.length !== 0){
+          for(let file of files){
+            Files.push(JSON.parse(JSON.stringify(file)))
+          }
+
+        }
+      }
+      console.log(Files)
+      if(Files.length === 0){
+        return response.status(404).json({
+          status: 'error',
+          message: 'no files'
+        })
+      }
+      return  response.status(200).json({
+        status: 'success',
+        data: Files
+      })
+    }catch (e) {
+      return response.status(500).json({
+        status: 'error',
+        message: e.message
+      })
+    }
   }
 
 }

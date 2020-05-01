@@ -13,6 +13,8 @@ const Role = use("App/Models/Role");
 const UserRole = use("App/Models/UserRole")
 const UserAvatar = use("App/Models/UserAvatar");
 const PrivacySetting = use("App/Models/PrivacySetting");
+const PostImage = use("App/Models/Postimage");
+
 const Helpers = use('Helpers')
 
 const Hash = use('Hash');

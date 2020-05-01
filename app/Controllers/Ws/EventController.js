@@ -28,17 +28,25 @@ class EventController {
     socket.on('COMMENT_CREATE', (e) => this.onCommentCreate(auth.user.id,e))
     socket.on('COMMENT_DELETE', (e) => this.onCommentDelete(auth.user.id,e))
     socket.on('COMMENT_EDIT', (e) => this.onCommentEdit(auth.user.id,e))
+    socket.on('NEW_NOTIFICATION', (e) => this.onNotification(auth.user.id,e))
+    socket.on('READ_NOTIFICATION', (e) => this.onReadNotification(auth.user.id,e))
+
+
 
 
 
   }
 
-  async getConnections(authUserId){
-    const databaseData = await WsConnection.query().where("user_id", authUserId).first()
-    return JSON.parse(JSON.stringify(databaseData))
+  async onNotification(userId,e) {
+
+    Ws.getChannel('event:*').topic(`event:${userId}`).broadcastToAll('NEW_NOTIFICATION',)
 
   }
+  async onReadNotification(userId,e) {
 
+    Ws.getChannel('event:*').topic(`event:${userId}`).broadcastToAll('READ_NOTIFICATION',)
+
+  }
   async onPostCreate(userId, e) {
     const friends = await this.getFriends(userId)
       if (friends.length !== 0) {
@@ -172,8 +180,8 @@ class EventController {
         Ws.getChannel('event:*').topic(`event:${AuthUserId}`).broadcastToAll('POST_UNDISLIKED', e.firstname)
 
       } else if (friends.length === 0) {
-        Ws.getChannel('event:*').topic(`event:${AuthUserId}`).broadcastToAll('POST_UNDISLIKED', e.firstname)
-      }
+      Ws.getChannel('event:*').topic(`event:${AuthUserId}`).broadcastToAll('POST_UNDISLIKED', e.firstname)
+    }
 
   }
   async onCancelFriendRequest(e) {

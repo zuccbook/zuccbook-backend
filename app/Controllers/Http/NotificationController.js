@@ -12,13 +12,15 @@ class NotificationController {
     if (notifications.length !== 0) {
       for (let notification of notifications) {
         const user = await User.query().where('id', notification.sender_id).first()
-        const userAvatar = await  UserAvatar.query().where('id',notification.sender_id).where('isCurrentAvatar',1).first()
+        const userAvatar = await  UserAvatar.query().where('user_id',notification.sender_id).where('isCurrentAvatar',1).first()
         notification.sender = JSON.parse(JSON.stringify(user))
         notification.sender.avatar = JSON.parse(JSON.stringify(userAvatar))
       }
+      console.log(notifications)
+
       return response.status(200).json({
         status:'success',
-        data:databaseNotifications
+        data:notifications
       })
     }else{
       return response.status(404).json({
