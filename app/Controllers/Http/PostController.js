@@ -140,7 +140,7 @@ class PostController {
       const dislikes = JSON.parse(JSON.stringify(postDislikes))
       if (Postdislike.length !== 0) {
         for (let dislike of dislikes) {
-          await Postdislike.query().where('id', dislike.id).delete()
+          await Postdislike.query().where('id', dislike.id).where('poster_id',auth.user.id).delete()
         }
       }
       const postLikes = await Postlike.query().where('post_id', body.postId).fetch()
@@ -201,8 +201,6 @@ class PostController {
       likePost.user_id = body.senderId
       likePost.post_id = body.postId
       await likePost.save()
-      console.log(body)
-      console.log(body.userId + " : " + auth.user.id)
       if(body.userId !== auth.user.id){
        const notification = new Notification()
        notification.type = 'POST_LIKED'

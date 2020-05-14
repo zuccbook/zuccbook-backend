@@ -88,7 +88,7 @@ class UserController {
 
   async update({request, auth, response}) {
 
-    const user = await User.find(request.only("id").id);
+    const user = await User.find(auth.user.id);
     if (!user) {
       return response.status(400).json({
         status: "Error",
@@ -236,9 +236,12 @@ class UserController {
     const userAvatar = await UserAvatar.query().where('user_id', db_user.id).where('isCurrentAvatar', 1).first()
     const userRoles = await UserRole.query().where('user_id', db_user.id).first()
     const Roles = await Role.query().where('id', userRoles.role_id).first()
+    const Privacy = await PrivacySetting.query().where('user_id', db_user.id).first()
+
     const user = JSON.parse(JSON.stringify(db_user));
     delete user.password
     user.avatar = JSON.parse(JSON.stringify(userAvatar));
+    user.privacy = JSON.parse(JSON.stringify(Privacy))
     user.roles = JSON.parse(JSON.stringify(userRoles))
     user.roles.role = JSON.parse(JSON.stringify(Roles))
 
@@ -246,7 +249,7 @@ class UserController {
     if (!user) {
       return response.status(404).json({
         status: "Error",
-        message: "Could not find get user."
+        message: "Could not get user."
       });
     }
     return response.status(200).json({
@@ -257,18 +260,20 @@ class UserController {
   }
 
   async comparePassword({request, auth, response}) {
-    const isSame = await Hash.verify(request.input("password"), request.input("hash"));
-    if (isSame) {
-      return response.status(200).json({
-        status: "Success",
-        message: "The passwords match."
-      })
-    } else {
-      return response.status(401).json({
+    const body = request.only(['password'])
+    const isSame = await Hash.verify(body.password, auth.user.password);
+
+    if(!isSame) {
+      return response.status(404).json({
         status: "Error",
         message: "No match"
       })
     }
+      return response.status(200).json({
+        status: "Success",
+        message: "The passwords match."
+      })
+
   }
 
   async search({request, auth, response}) {
@@ -380,6 +385,23 @@ class UserController {
   async getAllAvatars({request, auth, params, response}) {
 
     const userAvatars = await UserAvatar.query().where('user_id', params.userid).fetch()
+
+    if (!userAvatars) {
+      return response.status(404).json({
+        error: "not found"
+      })
+    }
+
+    return response.status(200).json({
+      success: 'success',
+      avatars: userAvatars
+
+    })
+
+  }
+  async changeProfilePrivacy({request, auth, params, response}) {
+
+    const privacy = await UserAvatar.query().where('user_id', params.userid).fetch()
 
     if (!userAvatars) {
       return response.status(404).json({

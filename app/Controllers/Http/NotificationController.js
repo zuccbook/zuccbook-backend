@@ -14,6 +14,7 @@ class NotificationController {
         const user = await User.query().where('id', notification.sender_id).first()
         const userAvatar = await  UserAvatar.query().where('user_id',notification.sender_id).where('isCurrentAvatar',1).first()
         notification.sender = JSON.parse(JSON.stringify(user))
+        console.log(user)
         notification.sender.avatar = JSON.parse(JSON.stringify(userAvatar))
       }
       console.log(notifications)
