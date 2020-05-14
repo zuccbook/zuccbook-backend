@@ -102,4 +102,12 @@ dist
 
 # TernJS port file
 .tern-port
+
+#idea
 .idea/
+
+#extra
+store/user
+store/post
+tmp/
+
