@@ -70,7 +70,6 @@ class EventController {
   async onPostDelete(AuthUserId, e) {
 
     const friends = await this.getFriends(AuthUserId)
-    console.log(friends)
     if (friends.length !== 0) {
       for (let friend of friends) {
         try {

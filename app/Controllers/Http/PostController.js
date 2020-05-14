@@ -126,7 +126,6 @@ class PostController {
 
   async deletePost({request, params, auth, response}) {
     const body = request.only(['postId'])
-    console.log(body)
     if (!body) {
       return response.status(400).json({
         status: 'bad request',
@@ -152,7 +151,6 @@ class PostController {
       }
       const postFiles = await PostImage.query().where('post_id', body.postId).fetch()
       const files = JSON.parse(JSON.stringify(postFiles))
-      console.log(files)
       if (postFiles.length !== 0) {
         for (let file of files) {
           fs.unlink('./store/post/' + file.path, (err) => {
@@ -565,7 +563,6 @@ class PostController {
     let likes = JSON.parse(JSON.stringify(postlikes))
     if (likes.length !== 0) {
       for (let like of likes) {
-        console.log(like)
         const user = await User.query().where("id", like.user_id).first()
         like.user = JSON.parse(JSON.stringify(user))
         delete like.user.password
@@ -617,7 +614,6 @@ class PostController {
 
         }
       }
-      console.log(Files)
       if(Files.length === 0){
         return response.status(404).json({
           status: 'error',
