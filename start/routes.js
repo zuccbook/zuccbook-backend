@@ -46,6 +46,10 @@ Route.post("/user/changeavatar", "UserController.changeProfilePicture").middlewa
 
 Route.get("/users/avatars/:userid", "UserController.getAllAvatars").middleware(["spoofAccept", "auth"]);
 
+Route.patch("/users/privacy/friendrequest/change", "UserController.changeProfilePrivacy").middleware(["spoofAccept", "auth"]);
+
+Route.patch("/users/privacy/profile/change", "UserController.friendRequest").middleware(["spoofAccept", "auth"]);
+
 
 
 /** ----------------------------------------------------------------

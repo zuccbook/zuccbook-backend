@@ -7,6 +7,7 @@ const moveFile = require('move-file');
 
 const readChunk = require('read-chunk');
 const imageType = require('image-type');
+const os = require("os");
 
 const User = use("App/Models/User");
 const Role = use("App/Models/Role");
@@ -65,11 +66,10 @@ class UserController {
     const userRole = await Role.findBy("slug", "user");
 
     await user.Roles().attach([userRole.id]);
-
-    fs.mkdirSync("./store/user/" + user.id);
+    fs.mkdirSync(os.homedir+"reidun_data/store/user/" + user.id);
 
     let path = "/" + user.id + `/${new Date().getTime()}.png`;
-    FileUtil.copy('./store/default/account.png', "./store/user" + path, (err) => {
+    FileUtil.copy('./store/default/account.png', os.homedir+"reidun_data/store/user" + path, (err) => {
       if (err) return err;
 
     });
@@ -326,7 +326,7 @@ class UserController {
       });
     }
 
-    await profilePic.move(Helpers.tmpPath('uploads'), {
+    await profilePic.move(os.homedir+"/reidun_data/uploads", {
       name: profilePic.fileName,
       overwrite: true
     })
@@ -338,10 +338,10 @@ class UserController {
       });
 
     }
-    const buffer = readChunk.sync("./tmp/uploads/"+profilePic.fileName, 0, 12);
+    const buffer = readChunk.sync(os.homedir+"/reidun_data/uploads/"+profilePic.fileName, 0, 12);
     const result = imageType(buffer);
     if(!result){
-      fs.unlink('./tmp/uploads/'+profilePic.fileName, (err) => {
+      fs.unlink(os.homedir+'/reidun_data/uploads/'+profilePic.fileName, (err) => {
         if(err){
           console.log(err)
         }
@@ -355,7 +355,7 @@ class UserController {
 
     let path = userid + "/" + `${new Date().getTime()}.` + profilePic.subtype;
 
-    await moveFile("./tmp/uploads/" + profilePic.fileName, "./store/user/" + path)
+    await moveFile(os.homedir+"/reidun_data/uploads/" + profilePic.fileName, os.homedir+"/reidun_data/store/user/" + path)
 
     try {
       await UserAvatar.query().where('user_id', userid).where('isCurrentAvatar', 1).update({'isCurrentAvatar': 0})
@@ -400,21 +400,36 @@ class UserController {
 
   }
   async changeProfilePrivacy({request, auth, params, response}) {
+    const body = response.only(["privacy_setting"])
+    try {
+       await PrivacySetting.query().where('user_id', auth.user.id).update({profile_privacy:body.privacy_setting})
+      return response.status(200).json({
+        success: 'success',
+        message:'Changed'
 
-    const privacy = await UserAvatar.query().where('user_id', params.userid).fetch()
+      })
+    }catch (e) {
 
-    if (!userAvatars) {
       return response.status(404).json({
         error: "not found"
       })
     }
+  }
+  async friendRequest({request, auth, params, response}) {
+    const body = response.only(["friend_request_privacy"])
+    try {
+      await PrivacySetting.query().where('user_id', auth.user.id).update({profile_privacy:body.friend_request_privacy})
+      return response.status(200).json({
+        success: 'success',
+        message:'Changed'
 
-    return response.status(200).json({
-      success: 'success',
-      avatars: userAvatars
+      })
+    }catch (e) {
 
-    })
-
+      return response.status(404).json({
+        error: "not found"
+      })
+    }
   }
 
 }

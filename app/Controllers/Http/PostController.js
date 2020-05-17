@@ -16,6 +16,7 @@ const {validate} = use('Validator');
 const moveFile = require('move-file');
 const readChunk = require('read-chunk');
 const imageType = require('image-type');
+const os = require("os");
 const fs = use('fs')
 
 class PostController {
@@ -50,7 +51,7 @@ class PostController {
       }
       for (let file of uploadFiles) {
         if (file != null) {
-          await file.move(Helpers.tmpPath('uploads'), {
+          await file.move(os.homedir+"/reidun_data/uploads", {
             name: file.fileName,
             overwrite: true
           })
@@ -70,13 +71,13 @@ class PostController {
       post.poster_id = poster
       await post.save()
 
-      fs.mkdirSync("./store/post/" + post.id);
+      fs.mkdirSync(os.homedir+"/reidun_data/store/post/" + post.id);
 
       for (let file of uploadFiles) {
         let path = post.id + "/" + `${new Date().getTime()}.` + file.subtype;
         storeFiles.push(path)
 
-        await moveFile("./tmp/uploads/" + file.fileName, "./store/post/" + path)
+        await moveFile(os.homedir+"/reidun_data/uploads/" + file.fileName, os.homedir+"/reidun_data/store/post/" + path)
       }
 
       for (let storeFile of storeFiles) {
