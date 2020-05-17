@@ -49,7 +49,7 @@ class D_UserSeeder {
 
     await findUser.Roles().attach([adminRole.id]);
 
-    const dirs = ['/reieun_data','/reidun_data/store/','/reidun_data/store/post','/reidun_data/store/user']
+    const dirs = ['/reidun_data','/reidun_data/store/','/reidun_data/store/post','/reidun_data/store/user']
     let path = "/" + user.id + `/${new Date().getTime()}.png`;
     try {
       for (let dir of dirs) {
