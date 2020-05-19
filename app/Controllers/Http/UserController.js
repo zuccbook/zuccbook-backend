@@ -66,10 +66,10 @@ class UserController {
     const userRole = await Role.findBy("slug", "user");
 
     await user.Roles().attach([userRole.id]);
-    fs.mkdirSync(os.homedir+"reidun_data/store/user/" + user.id);
+    fs.mkdirSync(os.homedir+"/reidun_data/store/user/" + user.id);
 
     let path = "/" + user.id + `/${new Date().getTime()}.png`;
-    FileUtil.copy('./store/default/account.png', os.homedir+"reidun_data/store/user" + path, (err) => {
+    FileUtil.copy('./store/default/account.png', os.homedir+"/reidun_data/store/user" + path, (err) => {
       if (err) return err;
 
     });
