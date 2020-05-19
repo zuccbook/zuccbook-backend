@@ -78,10 +78,10 @@ class EventController {
         }
 
       }
-      Ws.getChannel('event:*').topic(`event:${userId}`).broadcastToAll('POST_DELETE', e.firstname)
+      Ws.getChannel('event:*').topic(`event:${AuthUserId}`).broadcastToAll('POST_DELETE', e.firstname)
 
     } else if (friends.length === 0) {
-      Ws.getChannel('event:*').topic(`event:${userId}`).broadcastToAll('POST_DELETE', e.firstname)
+      Ws.getChannel('event:*').topic(`event:${AuthUserId}`).broadcastToAll('POST_DELETE', e.firstname)
 
     }
 
