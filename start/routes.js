@@ -97,6 +97,8 @@ Route.delete("/friend/delete", "FriendController.removeFriend").middleware(["spo
 
 Route.post("/post/create", "PostController.createPost").middleware(["spoofAccept", "auth"]);
 
+Route.patch("/post/update", "PostController.UpdatePost").middleware(["spoofAccept", "auth"]);
+
 Route.get("/posts/get", "PostController.getPosts").middleware(["spoofAccept", "auth"]);
 
 Route.get("/post/get", "PostController.getPost").middleware(["spoofAccept", "auth"]);
