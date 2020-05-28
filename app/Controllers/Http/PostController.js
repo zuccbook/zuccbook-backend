@@ -633,7 +633,7 @@ class PostController {
     }
   }
   async updatePost({request, params, auth, response}){
-    const body = request.only(['userId',['newText', 'postId']])
+    const body = request.only(['userId','newText', 'postId'])
     if(!body){
      return response.status(400).json({
         status:"error",
