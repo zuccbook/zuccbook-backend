@@ -632,6 +632,27 @@ class PostController {
       })
     }
   }
+  async updatePost({request, params, auth, response}){
+    const body = request.only(['userId',['newText', 'postId']])
+    if(!body){
+     return response.status(400).json({
+        status:"error",
+        message:"Body is malformed"
+      })
+    }
+    try {
+      await Post.query().where("id", body.postId).where("poster_id",body.userId).update({text:body.newText})
+      return response.status(200).json({
+        status:"error",
+        message:"Post text successfully changed!"
+      })
+    } catch (e) {
+      return response.status(500).json({
+        status:"error",
+        message:"Internal server error"
+      })
+    }
+  }
 
 }
 
