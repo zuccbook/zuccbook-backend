@@ -32,7 +32,7 @@ Route.delete("/user/delete", "UserController.delete").middleware(["spoofAccept",
 
 Route.post("/user/login", "UserController.login").middleware(["spoofAccept", "guest"]);
 
-Route.post( "/user/comparepassword", "UserController.comparePassword").middleware(["spoofAccept", "auth"]);
+Route.patch( "/user/update/requirePass", "UserController.updateAndRequirePass").middleware(["spoofAccept", "auth"]);
 
 Route.get("/user/:id", "UserController.getOne").middleware(["spoofAccept", "auth"]);
 

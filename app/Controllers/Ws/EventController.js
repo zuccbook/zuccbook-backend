@@ -31,6 +31,13 @@ class EventController {
     socket.on('NEW_NOTIFICATION', (e) => this.onNotification(auth.user.id,e))
     socket.on('READ_NOTIFICATION', (e) => this.onReadNotification(auth.user.id,e))
     socket.on('theme-changed', (e) => this.onThemeChanged(auth.user.id,e))
+    socket.on('fullNameChanged',(e) => this.onFullNameChanged(auth.user.id,e))
+  }
+  async onFullNameChanged(authUsrId,e){
+    const fullNameChanged = Ws.getChannel('event:*').topic(`event:${authUsrId}`);
+    if (fullNameChanged){
+      fullNameChanged.broadcastToAll('fullNameChanged',e);
+    }
 
   }
   async onThemeChanged(authUsrId,e){
