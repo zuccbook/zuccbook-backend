@@ -86,8 +86,57 @@ class UserController {
     });
   }
 
-  async update({request, auth, response}) {
+  async updateAndRequirePass({request, auth, response}) {
+    const user = await User.find(auth.user.id);
+    const input = request.all();
+    if (!user || !this.comparePassword(input.passCheck,auth.user.password)) {
+      return response.status(400).json({
+        status: "Error",
+        message: "Request was malformed"
+      });
+    }
 
+
+    const rules = {
+      first_name: "required",
+      last_name: "required",
+      email: "required|email",
+      password: "required"
+    };
+
+    const body = {};
+
+    body.first_name =  input.first_name;
+    body.last_name =  input.last_name;
+    body.gender =  input.gender;
+    body.birthday =  input.birthday;
+    body.email =  input.email;
+    body.password =  input.informationEdit === true ? user.password : input.password;
+
+    const validation = await validate(body, rules);
+
+    if (validation.fails()) {
+      return response.status(400).json({
+        status: "Error",
+        message: validation.messages()
+      });
+    }
+
+    user.firstname = body.first_name;
+    user.lastname = body.last_name;
+    user.email = body.email;
+    user.gender = body.gender;
+    user.birthday = body.birthday;
+    user.password = body.password;
+
+    await user.save();
+
+    return response.status(200).json({
+      status: "Success",
+      message: "The users was successfully updated."
+    });
+  }
+  async update({request, auth, response}) {
     const user = await User.find(auth.user.id);
     if (!user) {
       return response.status(400).json({
@@ -124,8 +173,8 @@ class UserController {
     user.firstname = body.first_name;
     user.lastname = body.last_name;
     user.email = body.email;
-    user.gender = body.gender
-    user.birthday = body.birthday
+    user.gender = body.gender;
+    user.birthday = body.birthday;
     user.password = body.password;
 
     await user.save();
@@ -259,20 +308,9 @@ class UserController {
     });
   }
 
-  async comparePassword({request, auth, response}) {
-    const body = request.only(['password'])
-    const isSame = await Hash.verify(body.password, auth.user.password);
+  comparePassword(passCheck,hash) {
 
-    if(!isSame) {
-      return response.status(404).json({
-        status: "Error",
-        message: "No match"
-      })
-    }
-      return response.status(200).json({
-        status: "Success",
-        message: "The passwords match."
-      })
+    return Hash.verify(passCheck, hash);
 
   }
 
