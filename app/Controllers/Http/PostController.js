@@ -363,6 +363,43 @@ class PostController {
       message: 'comment successfully created'
     })
   }
+  async updateComment({request, params, auth, response}) {
+    const body = request.only(['userId','newText', 'commentId'])
+    if(!body){
+      return response.status(400).json({
+        status:"error",
+        message:"Body is malformed"
+      })
+    }
+    try {
+      await Post.query().where("id", body.commentId).where("users_id",body.userId).update({comment_content:body.newText})
+      return response.status(200).json({
+        status:"error",
+        message:"Post text successfully changed!"
+      })
+    } catch (e) {
+      return response.status(500).json({
+        status:"error",
+        message:"Internal server error"
+      })
+    }
+  }
+  async deleteComment({request, params, auth, response}){
+    const body = request.only(['commentId'])
+    try{
+    await PostComment.query().where('id', body.commentId).where("users_id",auth.user.id).delete()
+
+    return response.status(200).json({
+      status:"error",
+      message:"Post text successfully changed!"
+    })
+  } catch (e) {
+    return response.status(500).json({
+      status:"error",
+      message:"Internal server error"
+    })
+  }
+  }
 
   async getPostsFromSpecificUser({request, params, auth, response}) {
     if (params.id === undefined && params.id === '') {

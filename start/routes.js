@@ -109,6 +109,10 @@ Route.post('/post/comment/create','PostController.commentPost').middleware(['spo
 
 Route.get('/post/comments/:postId','PostController.getComments').middleware(['spoofAccept','auth'])
 
+Route.delete('/post/comments/delete','PostController.deleteComment').middleware(['spoofAccept','auth'])
+
+Route.patch('/post/comments/update','PostController.updateComment').middleware(['spoofAccept','auth'])
+
 Route.get('/post/user/:id', 'PostController.getPostsFromSpecificUser').middleware(['spoofAccept','auth'])
 
 Route.post('/post/like', 'PostController.likePost').middleware(['spoofAccept','auth'])

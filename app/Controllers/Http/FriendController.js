@@ -46,21 +46,32 @@ class FriendController {
     }
   }
   async denyFriendRequest({request, params, auth, response}) {
-    const body = request.only("senderId");
 
-    try {
-      await Relationship.query().where('user_id_1',body.senderId).where('user_id_2',auth.user.id).update({
-        'status': -1,
-        'last_action_user_id': auth.user.id
-      })
+    const rules = {
+      userId: "required",
+    };
+
+    const body = request.only(['userId'])
+
+    const validation = await validate(body, rules);
+
+    if (validation.fails()) {
+      return response.status(400).json({
+        status: "Error",
+        message: validation.messages()
+      });
+    }
+    try{
+      await Relationship.query().whereRaw('(user_id_1 = ? AND user_id_2 = ?)',[auth.user.id,body.userId]).orWhereRaw('(user_id_1 = ?  AND user_id_2 = ?)',[body.userId,auth.user.id]).delete()
       return response.status(200).json({
-        status: "success",
-        message: "Denied friend request"
+        status: "Success",
+        message: 'Denied request!'
       });
     }catch (e) {
+      console.log(e)
       return response.status(500).json({
         status: "Error",
-        message: "Error happened"
+        message: e.message
       });
     }
   }
