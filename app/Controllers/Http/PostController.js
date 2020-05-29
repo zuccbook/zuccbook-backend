@@ -364,7 +364,7 @@ class PostController {
     })
   }
   async updateComment({request, params, auth, response}) {
-    const body = request.only(['userId','newText', 'commentId'])
+    const body = request.only(['newText', 'commentId'])
     if(!body){
       return response.status(400).json({
         status:"error",
@@ -372,12 +372,13 @@ class PostController {
       })
     }
     try {
-      await Post.query().where("id", body.commentId).where("users_id",body.userId).update({comment_content:body.newText})
+      await PostComment.query().where("id", body.commentId).where("users_id",auth.user.id).update({comment_content:body.newText})
       return response.status(200).json({
         status:"error",
         message:"Post text successfully changed!"
       })
     } catch (e) {
+      console.log(e)
       return response.status(500).json({
         status:"error",
         message:"Internal server error"
