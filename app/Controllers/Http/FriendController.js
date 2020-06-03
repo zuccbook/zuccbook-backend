@@ -143,9 +143,9 @@ class FriendController {
     const data = await query.whereRaw('(user_id_1 = ? AND user_id_2 = ?)',[auth.user.id,body.targetUserId]).orWhereRaw('(user_id_1 = ?  AND user_id_2 = ?)',[body.targetUserId,auth.user.id]).first();
 
     if(!data){
-      return response.status(404).json({
+      return response.status(204).json({
         status: "Error",
-        message: "You don't have any relation with this user!"
+        data: data
       });
     }
 

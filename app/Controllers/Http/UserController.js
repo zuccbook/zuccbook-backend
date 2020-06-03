@@ -454,9 +454,10 @@ class UserController {
     }
   }
   async changeFriendRequestPrivacy({request, auth, params, response}) {
-    const body = request.only(["friend_request_privacy"])
+    const body = request.only(["privacy_setting"])
+
     try {
-      await PrivacySetting.query().where('user_id', auth.user.id).update({who_can_add:body.friend_request_privacy})
+      await PrivacySetting.query().where('user_id', auth.user.id).update({who_can_add:body.privacy_setting})
       return response.status(200).json({
         success: 'success',
         message:'Changed'
