@@ -80,6 +80,8 @@ Route.post("/friends/request/accept", "FriendController.acceptFriendRequest").mi
 
 Route.get("/friends/all/:id", "FriendController.getFriends").middleware(["spoofAccept", "auth"]);
 
+Route.get("/friends/user/:id/mutuals", "FriendController.getMutuals").middleware(["spoofAccept", "auth"]);
+
 Route.get("/friends/request/all", "FriendController.getFriendRequests").middleware(["spoofAccept", "auth"]);
 
 Route.post("/friends/request/deny", "FriendController.denyFriendRequest").middleware(["spoofAccept", "auth"]);
@@ -124,6 +126,7 @@ Route.post('/post/dislike', 'PostController.dislikePost').middleware(['spoofAcce
 Route.delete('/post/undislike', 'PostController.undislikePost').middleware(['spoofAccept','auth'])
 
 Route.get("/post/user/files/:id", "PostController.getFilesPostedByUser").middleware(["spoofAccept", "auth"]);
+
 
 
 

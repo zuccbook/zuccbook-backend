@@ -5,7 +5,7 @@ const Relationship = use('App/Models/Relationship')
 const Notification = use('App/Models/Notification')
 const User = use("App/Models/User");
 const UserAvatar = use("App/Models/UserAvatar");
-
+const Database = use('Database')
 
 
 class FriendController {
@@ -24,12 +24,13 @@ class FriendController {
 
 
   }
+
   async acceptFriendRequest({request, params, auth, response}) {
 
     const body = request.only("senderId");
 
     try {
-      await Relationship.query().where('user_id_1',body.senderId).where('user_id_2',auth.user.id).update({
+      await Relationship.query().where('user_id_1', body.senderId).where('user_id_2', auth.user.id).update({
         'status': 1,
         'last_action_user_id': auth.user.id
       })
@@ -37,7 +38,7 @@ class FriendController {
         status: "success",
         message: "Accepted friend request"
       });
-    }catch (e) {
+    } catch (e) {
       console.log(e)
       return response.status(500).json({
         status: "Error",
@@ -45,6 +46,7 @@ class FriendController {
       });
     }
   }
+
   async denyFriendRequest({request, params, auth, response}) {
 
     const rules = {
@@ -61,13 +63,13 @@ class FriendController {
         message: validation.messages()
       });
     }
-    try{
-      await Relationship.query().whereRaw('(user_id_1 = ? AND user_id_2 = ?)',[auth.user.id,body.userId]).orWhereRaw('(user_id_1 = ?  AND user_id_2 = ?)',[body.userId,auth.user.id]).delete()
+    try {
+      await Relationship.query().whereRaw('(user_id_1 = ? AND user_id_2 = ?)', [auth.user.id, body.userId]).orWhereRaw('(user_id_1 = ?  AND user_id_2 = ?)', [body.userId, auth.user.id]).delete()
       return response.status(200).json({
         status: "Success",
         message: 'Denied request!'
       });
-    }catch (e) {
+    } catch (e) {
       console.log(e)
       return response.status(500).json({
         status: "Error",
@@ -75,6 +77,52 @@ class FriendController {
       });
     }
   }
+
+  async getMutuals({request, params, auth, response}) {
+
+    /*
+
+    (SELECT user_id_1 FROM relationships WHERE user_id_1='72575375-ac69-4f08-9293-506259df808b' AND status = 1
+    UNION
+    SELECT user_id_2 FROM relationships WHERE user_id_2='72575375-ac69-4f08-9293-506259df808b' AND status = 1)
+    UNION ALL
+    (SELECT user_id_1 FROM relationships WHERE user_id_1='3e65e924-26db-423f-87c2-7df01d0142da' AND status = 1
+    UNION
+    SELECT user_id_2 FROM relationships WHERE user_id_2='3e65e924-26db-d423f-87c2-7df010142da' AND status = 1)
+
+
+    */
+
+
+    try {
+      const mutualId = await Relationship.query()
+        .select(Database.raw("IF(? = r.user_id_1 or ? = r.user_id_1,r.user_id_2,r.user_id_1) as mutuals",[auth.user.id,params.id])).from("relationships as r")
+        .whereRaw("((? = r.user_id_1) or (? = r.user_id_2 ) or (? = r.user_id_1) or (? = r.user_id_2 )) AND r.status = ?",[auth.user.id,auth.user.id,params.id,params.id,1])
+        .groupBy('mutuals').havingRaw('count(*) > 1').fetch()
+        const jsonMutals = JSON.parse(JSON.stringify(mutualId))
+        for(const mutual of jsonMutals){
+          const user = await User.query().select().where('id',mutual.mutuals).first()
+          const userAvatar = await UserAvatar.query().select().where('user_id',user.id).where('isCurrentAvatar',1).first()
+            mutual.user = JSON.parse(JSON.stringify(user))
+            delete mutual.user.password
+          mutual.user.avatar =  JSON.parse(JSON.stringify(userAvatar))
+        }
+        console.log(jsonMutals)
+
+
+      return response.status(200).json({
+        status: "Success",
+        message: jsonMutals
+      });
+    } catch (e) {
+      console.log(e)
+      return response.status(500).json({
+        status: "Error",
+        message: e.message
+      });
+    }
+  }
+
   async CancelFriendRequest({request, params, auth, response}) {
 
     const rules = {
@@ -91,13 +139,13 @@ class FriendController {
         message: validation.messages()
       });
     }
-    try{
-      await Relationship.query().whereRaw('(user_id_1 = ? AND user_id_2 = ?)',[auth.user.id,body.userId]).orWhereRaw('(user_id_1 = ?  AND user_id_2 = ?)',[body.userId,auth.user.id]).delete()
+    try {
+      await Relationship.query().whereRaw('(user_id_1 = ? AND user_id_2 = ?)', [auth.user.id, body.userId]).orWhereRaw('(user_id_1 = ?  AND user_id_2 = ?)', [body.userId, auth.user.id]).delete()
       return response.status(200).json({
         status: "Success",
         message: 'Cancelled request!'
       });
-    }catch (e) {
+    } catch (e) {
       console.log(e)
       return response.status(500).json({
         status: "Error",
@@ -105,6 +153,7 @@ class FriendController {
       });
     }
   }
+
   async removeFriend({request, params, auth, response}) {
     const rules = {
       userId: "required",
@@ -120,13 +169,13 @@ class FriendController {
         message: validation.messages()
       });
     }
-    try{
-      await Relationship.query().whereRaw('(user_id_1 = ? AND user_id_2 = ?)',[auth.user.id,body.userId]).orWhereRaw('(user_id_1 = ?  AND user_id_2 = ?)',[body.userId,auth.user.id]).where('status',1).delete()
+    try {
+      await Relationship.query().whereRaw('(user_id_1 = ? AND user_id_2 = ?)', [auth.user.id, body.userId]).orWhereRaw('(user_id_1 = ?  AND user_id_2 = ?)', [body.userId, auth.user.id]).where('status', 1).delete()
       return response.status(200).json({
         status: "Success",
         message: 'Deleted friend!'
       });
-    }catch (e) {
+    } catch (e) {
       console.log(e)
       return response.status(500).json({
         status: "Error",
@@ -136,13 +185,13 @@ class FriendController {
 
   }
 
-  async getRelations({request, params, auth, response}){
+  async getRelations({request, params, auth, response}) {
 
     const body = request.only(["targetUserId"]);
     const query = Relationship.query()
-    const data = await query.whereRaw('(user_id_1 = ? AND user_id_2 = ?)',[auth.user.id,body.targetUserId]).orWhereRaw('(user_id_1 = ?  AND user_id_2 = ?)',[body.targetUserId,auth.user.id]).first();
+    const data = await query.whereRaw('(user_id_1 = ? AND user_id_2 = ?)', [auth.user.id, body.targetUserId]).orWhereRaw('(user_id_1 = ?  AND user_id_2 = ?)', [body.targetUserId, auth.user.id]).first();
 
-    if(!data){
+    if (!data) {
       return response.status(404).json({
         status: "Error",
         message: "You don't have any relation with this user!"
@@ -157,26 +206,26 @@ class FriendController {
   }
 
 
-  async getFriends({request, params, auth, response}){
+  async getFriends({request, params, auth, response}) {
 
-    const friends = await Relationship.query().where("status",1).whereRaw("(user_id_1 = ? OR user_id_2 = ?)",[params.id,params.id]).fetch()
+    const friends = await Relationship.query().where("status", 1).whereRaw("(user_id_1 = ? OR user_id_2 = ?)", [params.id, params.id]).fetch()
     const data = JSON.parse(JSON.stringify(friends))
-    for(let friend of data) {
+    for (let friend of data) {
       let user;
-      if(friend.user_id_1 === params.id){
-         user = await User.query().where("id", friend.user_id_2).first()
-      }else if(friend.user_id_2 === params.id){
-         user = await User.query().where("id", friend.user_id_1).first()
+      if (friend.user_id_1 === params.id) {
+        user = await User.query().where("id", friend.user_id_2).first()
+      } else if (friend.user_id_2 === params.id) {
+        user = await User.query().where("id", friend.user_id_1).first()
       }
-      friend.user =  JSON.parse(JSON.stringify(user));
-      const userAvatar = await UserAvatar.query().where("user_id", user.id).where('isCurrentAvatar',1).first()
+      friend.user = JSON.parse(JSON.stringify(user));
+      const userAvatar = await UserAvatar.query().where("user_id", user.id).where('isCurrentAvatar', 1).first()
       friend.user.avatar = JSON.parse(JSON.stringify(userAvatar));
       delete friend.user.password
 
 
     }
 
-    if(data.length === 0){
+    if (data.length === 0) {
       return response.status(404).json({
         status: "Error",
         message: "No friends"
@@ -189,18 +238,19 @@ class FriendController {
     });
 
   }
-  async getFriendRequests({request, params, auth, response}){
 
-    const friendRequests = await Relationship.query().where("status",0).where('user_id_2', auth.user.id).fetch()
+  async getFriendRequests({request, params, auth, response}) {
+
+    const friendRequests = await Relationship.query().where("status", 0).where('user_id_2', auth.user.id).fetch()
     const requests = JSON.parse(JSON.stringify(friendRequests))
-    for(let request of requests) {
+    for (let request of requests) {
       let sender = await User.query().where("id", request.user_id_1).first()
       request.sender = JSON.parse(JSON.stringify(sender));
-      const senderAvatar = await UserAvatar.query().where("user_id", sender.id).where('isCurrentAvatar',1).first()
+      const senderAvatar = await UserAvatar.query().where("user_id", sender.id).where('isCurrentAvatar', 1).first()
       request.sender.avatar = JSON.parse(JSON.stringify(senderAvatar));
       delete request.sender.password
     }
-    if(requests.length === 0){
+    if (requests.length === 0) {
       return response.status(404).json({
         status: "Error",
         message: "No requests"
