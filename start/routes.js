@@ -44,6 +44,8 @@ Route.get("/users/search", "UserController.search").middleware(["spoofAccept", "
 
 Route.post("/user/changeavatar", "UserController.changeProfilePicture").middleware(["spoofAccept", "auth"]);
 
+Route.post("/user/changebanner", "UserController.changeProfileBanner").middleware(["spoofAccept", "auth"]);
+
 Route.get("/users/avatars/:userid", "UserController.getAllAvatars").middleware(["spoofAccept", "auth"]);
 
 Route.patch("/users/privacy/request/change", "UserController.changeFriendRequestPrivacy").middleware(["spoofAccept", "auth"]);
@@ -58,8 +60,11 @@ Route.patch("/users/privacy/profile/change", "UserController.changeProfilePrivac
  */
 
 
-Route.get("/media/avatar/:userid/:image", "MediaController.getUserAvatar").middleware(["spoofAccept"]);
+
+Route.get("/media/avatar/:userid/avatars/:image", "MediaController.getUserAvatar").middleware(["spoofAccept"]);
+Route.get("/media/user/:userid/banners/:image", "MediaController.getUserBanner").middleware(["spoofAccept"]);
 Route.get("/media/post/:postid/:file", "MediaController.getPostFile").middleware(["spoofAccept"]);
+
 
 
 

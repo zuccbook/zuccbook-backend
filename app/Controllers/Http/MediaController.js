@@ -10,8 +10,15 @@ const readFile = Helpers.promisify(fs.readFile)
 
 class MediaController {
   async getUserAvatar({request, params, auth, response}) {
-    let path = '/' + params.userid + '/' + params.image
+    let path = `/${params.userid}/avatars/${params.image}`
      const data = await readFile(os.homedir+"/reidun_data/store/user" + path)
+    const result = imageType(data);
+
+    return response.status(200).header('Content-type', result.mime).send(data)
+  }
+  async getUserBanner({request, params, auth, response}) {
+    let path = `/${params.userid}/banners/${params.image}`
+    const data = await readFile(os.homedir+"/reidun_data/store/user" + path)
     const result = imageType(data);
 
     return response.status(200).header('Content-type', result.mime).send(data)
@@ -22,7 +29,6 @@ class MediaController {
     const result = await FileType.fromBuffer(data);
 
     return response.status(200).header('Content-type', result.mime).header('Accept-Ranges','bytes').send(data)
-
 
   }
 

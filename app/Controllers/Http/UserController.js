@@ -13,6 +13,7 @@ const User = use("App/Models/User");
 const Role = use("App/Models/Role");
 const UserRole = use("App/Models/UserRole")
 const UserAvatar = use("App/Models/UserAvatar");
+const UserBanner = use("App/Models/UserBanner");
 const PrivacySetting = use("App/Models/PrivacySetting");
 const PostImage = use("App/Models/Postimage");
 
@@ -65,15 +66,26 @@ class UserController {
 
     const userRole = await Role.findBy("slug", "user");
 
-    await user.Roles().attach([userRole.id]);
-    fs.mkdirSync(os.homedir+"/reidun_data/store/user/" + user.id);
+    let avatarPath = `/${user.id}/avatars/${new Date().getTime()}.png`;
+    let bannerPath = `/${user.id}/banners/${new Date().getTime()}.jpg`;
 
-    let path = "/" + user.id + `/${new Date().getTime()}.png`;
-    FileUtil.copy('./store/default/account.png', os.homedir+"/reidun_data/store/user" + path, (err) => {
+    fs.mkdirSync(`${os.homedir}/reidun_data/store/user/${user.id}`);
+    fs.mkdirSync(`${os.homedir}/reidun_data/store/user/${user.id}/avatars`);
+    fs.mkdirSync(`${os.homedir}/reidun_data/store/user/${user.id}/banners`);
+
+    FileUtil.copy('./store/default/account.png', `${os.homedir}/reidun_data/store/user/${avatarPath}`, (err) => {
       if (err) return err;
 
     });
+    FileUtil.copy('./store/default/banner.jpg', `${os.homedir}/reidun_data/store/user/${bannerPath}`, (err) => {
+      if (err) return err;
 
+    });
+    const userBanner = new UserBanner();
+    userBanner.user_id = user.id;
+    userBanner.path = bannerPath;
+    userBanner.isCurrentBanner = 1;
+    await userBanner.save();
     const userAvatar = new UserAvatar();
     userAvatar.user_id = user.id;
     userAvatar.path = path;
@@ -207,10 +219,12 @@ class UserController {
     const db_user = await User.query()
       .where("users.id", params.id).first()
     const userAvatar = await UserAvatar.query().where('user_id', db_user.id).where('isCurrentAvatar', 1).first()
+    const userBanner = await UserBanner.query().where('user_id', db_user.id).where('isCurrentBanner', 1).first()
     const privacySettings = await PrivacySetting.query().where('user_id', db_user.id).first()
     const user = JSON.parse(JSON.stringify(db_user));
     delete user.password;
     user.avatar = userAvatar;
+    user.banner = userBanner;
     user.privacy = privacySettings;
 
     if (!user) {
@@ -286,10 +300,12 @@ class UserController {
     const userRoles = await UserRole.query().where('user_id', db_user.id).first()
     const Roles = await Role.query().where('id', userRoles.role_id).first()
     const Privacy = await PrivacySetting.query().where('user_id', db_user.id).first()
+    const userBanner = await UserBanner.query().where('user_id', db_user.id).where('isCurrentBanner', 1).first()
 
     const user = JSON.parse(JSON.stringify(db_user));
     delete user.password
     user.avatar = JSON.parse(JSON.stringify(userAvatar));
+    user.banner = JSON.parse(JSON.stringify(userBanner));
     user.privacy = JSON.parse(JSON.stringify(Privacy))
     user.roles = JSON.parse(JSON.stringify(userRoles))
     user.roles.role = JSON.parse(JSON.stringify(Roles))
@@ -391,10 +407,9 @@ class UserController {
 
 
 
-    let path = userid + "/" + `${new Date().getTime()}.` + profilePic.subtype;
+    let path = `/${new Date().getTime()}.` + profilePic.subtype;
 
-    await moveFile(os.homedir+"/reidun_data/uploads/" + profilePic.fileName, os.homedir+"/reidun_data/store/user/" + path)
-
+    await moveFile(`${os.homedir}/reidun_data/uploads/${profileBanner.fileName}`, `${os.homedir}/reidun_data/store/user/${userid}/avatars/${path}`)
     try {
       await UserAvatar.query().where('user_id', userid).where('isCurrentAvatar', 1).update({'isCurrentAvatar': 0})
       const userAvatar = new UserAvatar();
@@ -411,6 +426,80 @@ class UserController {
       userAvatar.path = path
       userAvatar.isCurrentAvatar = 1;
       userAvatar.save();
+    }
+
+
+    return response.status(200).json({
+      status: "Success",
+      message: 'updated profile picture!'
+    });
+  }
+
+  async changeProfileBanner({request, auth, response}) {
+    const {userid} = request.all();
+
+    const profileBanner = request.file('image', {
+      types: ['image'],
+      size: '2mb',
+      extnames: ['png', 'jpg', 'jfif']
+
+    })
+
+
+    if (!profileBanner) {
+      return response.status(400).json({
+        status: "error",
+        message: "no file!"
+      });
+    }
+
+    await profileBanner.move(os.homedir+"/reidun_data/uploads", {
+      name: profileBanner.fileName,
+      overwrite: true
+    })
+
+    if (!profileBanner.moved()) {
+      return response.status(500).json({
+        status: "error",
+        message: profileBanner.error().message
+      });
+
+    }
+    const buffer = readChunk.sync(os.homedir+"/reidun_data/uploads/"+profileBanner.fileName, 0, 12);
+    const result = imageType(buffer);
+    if(!result){
+      fs.unlink(os.homedir+'/reidun_data/uploads/'+profileBanner.fileName, (err) => {
+        if(err){
+          console.log(err)
+        }
+      })
+      return response.status(400).json({
+        message:"not an image"
+      })
+    }
+
+
+
+    let path = `/${new Date().getTime()}.` + profileBanner.subtype;
+
+    await moveFile(`${os.homedir}/reidun_data/uploads/${profileBanner.fileName}`, `${os.homedir}/reidun_data/store/user/${userid}/banners/${path}`)
+
+    try {
+      await UserBanner.query().where('user_id', userid).where('isCurrentBanner', 1).update({'isCurrentBanner': 0})
+      const userBanner = new UserBanner();
+
+      userBanner.user_id = userid
+      userBanner.path = path
+      userBanner.isCurrentBanner = 1;
+      userBanner.save();
+
+    } catch (e) {
+      const userBanner = new userBanner();
+
+      userBanner.user_id = userid
+      userBanner.path = path
+      userBanner.isCurrentBanner = 1;
+      userBanner.save();
     }
 
 
