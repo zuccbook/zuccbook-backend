@@ -409,7 +409,7 @@ class UserController {
 
     let path = `/${userid}/avatars/${new Date().getTime()}.` + profilePic.subtype;
 
-    await moveFile(`${os.homedir}/reidun_data/uploads/${profileBanner.fileName}`, `${os.homedir}/reidun_data/store/user/${path}`)
+    await moveFile(`${os.homedir}/reidun_data/uploads/${profilePic.fileName}`, `${os.homedir}/reidun_data/store/user/${path}`)
     try {
       await UserAvatar.query().where('user_id', userid).where('isCurrentAvatar', 1).update({'isCurrentAvatar': 0})
       const userAvatar = new UserAvatar();
