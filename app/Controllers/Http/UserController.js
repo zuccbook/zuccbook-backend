@@ -505,7 +505,7 @@ class UserController {
 
     return response.status(200).json({
       status: "Success",
-      message: 'updated profile picture!'
+      message: 'updated banner!'
     });
   }
 
