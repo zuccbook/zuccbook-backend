@@ -407,9 +407,9 @@ class UserController {
 
 
 
-    let path = `/${new Date().getTime()}.` + profilePic.subtype;
+    let path = `/${userid}/avatars/${new Date().getTime()}.` + profilePic.subtype;
 
-    await moveFile(`${os.homedir}/reidun_data/uploads/${profileBanner.fileName}`, `${os.homedir}/reidun_data/store/user/${userid}/avatars/${path}`)
+    await moveFile(`${os.homedir}/reidun_data/uploads/${profileBanner.fileName}`, `${os.homedir}/reidun_data/store/user/${path}`)
     try {
       await UserAvatar.query().where('user_id', userid).where('isCurrentAvatar', 1).update({'isCurrentAvatar': 0})
       const userAvatar = new UserAvatar();
@@ -480,9 +480,9 @@ class UserController {
 
 
 
-    let path = `/${new Date().getTime()}.` + profileBanner.subtype;
+    let path = `/${userid}/banners/${new Date().getTime()}.` + profileBanner.subtype;
 
-    await moveFile(`${os.homedir}/reidun_data/uploads/${profileBanner.fileName}`, `${os.homedir}/reidun_data/store/user/${userid}/banners/${path}`)
+    await moveFile(`${os.homedir}/reidun_data/uploads/${profileBanner.fileName}`, `${os.homedir}/reidun_data/store/user/${path}`)
 
     try {
       await UserBanner.query().where('user_id', userid).where('isCurrentBanner', 1).update({'isCurrentBanner': 0})
