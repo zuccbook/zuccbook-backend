@@ -10,6 +10,7 @@ class PostImageSchema extends Schema {
       table.string('path').notNullable()
       table.integer('post_id',10).unsigned().index()
       table.foreign('post_id').references('id').on('posts').onDelete('cascade')
+
     })
   }
 
