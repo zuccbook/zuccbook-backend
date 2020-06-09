@@ -388,6 +388,7 @@ class PostController {
   async deleteComment({request, params, auth, response}){
     const body = request.only(['commentId'])
     try{
+
     await PostComment.query().where('id', body.commentId).where("users_id",auth.user.id).delete()
 
     return response.status(200).json({

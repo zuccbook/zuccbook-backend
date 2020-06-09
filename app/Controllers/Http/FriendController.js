@@ -80,18 +80,6 @@ class FriendController {
 
   async getMutuals({request, params, auth, response}) {
 
-    /*
-
-    (SELECT user_id_1 FROM relationships WHERE user_id_1='72575375-ac69-4f08-9293-506259df808b' AND status = 1
-    UNION
-    SELECT user_id_2 FROM relationships WHERE user_id_2='72575375-ac69-4f08-9293-506259df808b' AND status = 1)
-    UNION ALL
-    (SELECT user_id_1 FROM relationships WHERE user_id_1='3e65e924-26db-423f-87c2-7df01d0142da' AND status = 1
-    UNION
-    SELECT user_id_2 FROM relationships WHERE user_id_2='3e65e924-26db-d423f-87c2-7df010142da' AND status = 1)
-
-
-    */
 
 
     try {
@@ -107,12 +95,11 @@ class FriendController {
             delete mutual.user.password
           mutual.user.avatar =  JSON.parse(JSON.stringify(userAvatar))
         }
-        console.log(jsonMutals)
-
+          let hasMutualfriends = jsonMutals.length > 0;
 
       return response.status(200).json({
         status: "Success",
-        message: jsonMutals
+        data: hasMutualfriends
       });
     } catch (e) {
       console.log(e)
