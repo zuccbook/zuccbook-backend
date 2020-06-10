@@ -2,7 +2,7 @@
 
 /** @type {import('@adonisjs/framework/src/Env')} */
 const Env = use('Env')
-
+const os = use('os')
 module.exports = {
 
   /*
@@ -201,7 +201,7 @@ module.exports = {
     */
     console: {
       driver: 'console',
-      name: 'adonis-app',
+      name: 'reidun',
       level: 'info'
     },
 
@@ -216,12 +216,15 @@ module.exports = {
     | For a different directory, set an absolute path for the filename.
     |
     */
-    file: {
-      driver: 'file',
-      name: 'adonis-app',
-      filename: 'adonis.log',
-      level: 'info'
-    }
+    file:
+      {
+        driver: 'file',
+        name: 'reidun',
+        filename: `${os.homedir}/reidun_data/log/reidun.log`,
+        level: 'info'
+      }
+
+
   },
 
   /*

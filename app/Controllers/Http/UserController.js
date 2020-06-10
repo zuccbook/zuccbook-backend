@@ -16,6 +16,7 @@ const UserAvatar = use("App/Models/UserAvatar");
 const UserBanner = use("App/Models/UserBanner");
 const PrivacySetting = use("App/Models/PrivacySetting");
 const PostImage = use("App/Models/Postimage");
+const Logger = use('Logger')
 
 const Helpers = use('Helpers')
 
@@ -101,7 +102,7 @@ class UserController {
   async updateAndRequirePass({request, auth, response}) {
     const user = await User.find(auth.user.id);
     const input = request.all();
-    if (!user || !this.comparePassword(input.passCheck,auth.user.password)) {
+    if (!user || !this.comparePassword(input.passCheck, auth.user.password)) {
       return response.status(400).json({
         status: "Error",
         message: "Request was malformed"
@@ -118,12 +119,12 @@ class UserController {
 
     const body = {};
 
-    body.first_name =  input.first_name;
-    body.last_name =  input.last_name;
-    body.gender =  input.gender;
-    body.birthday =  input.birthday;
-    body.email =  input.email;
-    body.password =  input.informationEdit === true ? user.password : input.password;
+    body.first_name = input.first_name;
+    body.last_name = input.last_name;
+    body.gender = input.gender;
+    body.birthday = input.birthday;
+    body.email = input.email;
+    body.password = input.informationEdit === true ? user.password : input.password;
 
     const validation = await validate(body, rules);
 
@@ -148,6 +149,7 @@ class UserController {
       message: "The users was successfully updated."
     });
   }
+
   async update({request, auth, response}) {
     const user = await User.find(auth.user.id);
     if (!user) {
@@ -324,7 +326,7 @@ class UserController {
     });
   }
 
-  comparePassword(passCheck,hash) {
+  comparePassword(passCheck, hash) {
 
     return Hash.verify(passCheck, hash);
 
@@ -380,7 +382,7 @@ class UserController {
       });
     }
 
-    await profilePic.move(os.homedir+"/reidun_data/uploads", {
+    await profilePic.move(os.homedir + "/reidun_data/uploads", {
       name: profilePic.fileName,
       overwrite: true
     })
@@ -392,19 +394,19 @@ class UserController {
       });
 
     }
-    const buffer = readChunk.sync(os.homedir+"/reidun_data/uploads/"+profilePic.fileName, 0, 12);
+    const buffer = readChunk.sync(os.homedir + "/reidun_data/uploads/" + profilePic.fileName, 0, 12);
     const result = imageType(buffer);
-    if(!result){
-      fs.unlink(os.homedir+'/reidun_data/uploads/'+profilePic.fileName, (err) => {
-        if(err){
+
+    if (!result) {
+      fs.unlink(os.homedir + '/reidun_data/uploads/' + profilePic.fileName, (err) => {
+        if (err) {
           console.log(err)
         }
       })
       return response.status(400).json({
-        message:"not an image"
+        message: "not an image"
       })
     }
-
 
 
     let path = `/${userid}/avatars/${new Date().getTime()}.` + profilePic.subtype;
@@ -453,7 +455,7 @@ class UserController {
       });
     }
 
-    await profileBanner.move(os.homedir+"/reidun_data/uploads", {
+    await profileBanner.move(os.homedir + "/reidun_data/uploads", {
       name: profileBanner.fileName,
       overwrite: true
     })
@@ -465,19 +467,18 @@ class UserController {
       });
 
     }
-    const buffer = readChunk.sync(os.homedir+"/reidun_data/uploads/"+profileBanner.fileName, 0, 12);
+    const buffer = readChunk.sync(os.homedir + "/reidun_data/uploads/" + profileBanner.fileName, 0, 12);
     const result = imageType(buffer);
-    if(!result){
-      fs.unlink(os.homedir+'/reidun_data/uploads/'+profileBanner.fileName, (err) => {
-        if(err){
+    if (!result) {
+      fs.unlink(os.homedir + '/reidun_data/uploads/' + profileBanner.fileName, (err) => {
+        if (err) {
           console.log(err)
         }
       })
       return response.status(400).json({
-        message:"not an image"
+        message: "not an image"
       })
     }
-
 
 
     let path = `/${userid}/banners/${new Date().getTime()}.` + profileBanner.subtype;
@@ -526,33 +527,122 @@ class UserController {
     })
 
   }
+
+  async getAllBanners({request, auth, params, response}) {
+
+    const userBanners = await UserBanner.query().where('user_id', params.userid).fetch()
+
+    if (!userBanners) {
+      return response.status(404).json({
+        error: "not found"
+      })
+    }
+
+    return response.status(200).json({
+      success: 'success',
+      avatars: userBanners
+
+    })
+  }
+
+  async deleteBanner({request, auth, params, response}) {
+    const body = request.all()
+
+    const userBanner = await UserBanner.query().where('id', body.bannerId).where('user_id', auth.user.id).first()
+    if(!userBanner){
+      return response.status(400).json({
+        status: 'error',
+        message: "could not find banner or already deleted"
+
+      })
+    }
+    try {
+
+      fs.unlink(`${os.homedir}/reidun_data/store/user/${userBanner.path}`, (err) => {
+        if (err) throw err
+      })
+
+      await UserBanner.query().where('id', body.bannerId).where('user_id', auth.user.id).delete()
+
+      return response.status(200).json({
+        status: 'success',
+        message: "deleted banner"
+
+      })
+    } catch (err) {
+
+      Logger.error(err)
+      Logger.transport('file').error(err)
+
+      return response.status(500).json({
+        status: 'error',
+        message: "could not delete image file or already deleted"
+
+      })
+    }
+
+
+  }
+
+  async deleteAvatar({request, auth, params, response}) {
+    const body = request.all()
+    const userAvatar = await UserAvatar.query().where('id', body.avatarId).where('user_id', auth.user.id).first()
+    if (!userAvatar) {
+      return response.status(400).json({
+        status: 'error',
+        message: "could not find avatar or already deleted"
+
+      })
+    }
+    try {
+      await fs.unlink(`${os.homedir}/reidun_data/store/user/${userAvatar.path}`, async (err) => {
+        if (err) throw err
+      })
+      await UserAvatar.query().where('id', body.avatarId).where('user_id', auth.user.id).delete()
+      return response.status(200).json({
+        success: 'success',
+        message: "deleted avatar"
+
+      })
+    } catch (err) {
+      Logger.error(err)
+      Logger.transport('file').error(err)
+      return response.status(500).json({
+        success: 'success',
+        message: "could not delete avatar or already deleted"
+
+      })
+    }
+  }
+
   async changeProfilePrivacy({request, auth, params, response}) {
     const body = request.only(["privacy_setting"])
     try {
-       await PrivacySetting.query().where('user_id', auth.user.id).update({profile_privacy:body.privacy_setting})
+      await PrivacySetting.query().where('user_id', auth.user.id).update({profile_privacy: body.privacy_setting})
       return response.status(200).json({
         success: 'success',
-        message:'Changed'
+        message: 'Changed'
 
       })
-    }catch (e) {
+    } catch (e) {
 
       return response.status(404).json({
         error: "not found"
       })
     }
   }
+
   async changeFriendRequestPrivacy({request, auth, params, response}) {
     const body = request.only(["privacy_setting"])
 
     try {
-      await PrivacySetting.query().where('user_id', auth.user.id).update({who_can_add:body.privacy_setting})
+      await PrivacySetting.query().where('user_id', auth.user.id).update({who_can_add: body.privacy_setting})
       return response.status(200).json({
         success: 'success',
-        message:'Changed'
+        message: 'Changed'
 
       })
-    }catch (e) {
+    } catch (e) {
 
       return response.status(500).json({
         error: e.message

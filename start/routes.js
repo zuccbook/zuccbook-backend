@@ -30,6 +30,10 @@ Route.patch("/user/update", "UserController.update").middleware(["spoofAccept", 
 
 Route.delete("/user/delete", "UserController.delete").middleware(["spoofAccept", "auth",]);
 
+Route.delete("/user/banner/delete", "UserController.deleteBanner").middleware(["spoofAccept", "auth",]);
+
+Route.delete("/user/avatar/delete", "UserController.deleteAvatar").middleware(["spoofAccept", "auth",]);
+
 Route.post("/user/login", "UserController.login").middleware(["spoofAccept", "guest"]);
 
 Route.patch( "/user/update/requirePass", "UserController.updateAndRequirePass").middleware(["spoofAccept", "auth"]);
