@@ -16,8 +16,9 @@ const UserAvatar = use("App/Models/UserAvatar");
 const UserBanner = use("App/Models/UserBanner");
 const PrivacySetting = use("App/Models/PrivacySetting");
 const PostImage = use("App/Models/Postimage");
-const Logger = use('Logger')
+const Blocklist = use("App/Models/blocklist")
 
+const Logger = use('Logger')
 const Helpers = use('Helpers')
 
 const Hash = use('Hash');
@@ -649,7 +650,30 @@ class UserController {
       })
     }
   }
+  async blockUser({request, auth, params, response}) {
+    const body = request.all()
+    try{
+      const blockList = new Blocklist()
+      blockList.blocker_id = auth.user.id
+      blockList.blocked_user_id = body.targetUserId
+      blockList.save()
+      return response.status(200).json({
+        status:'success',
+        message:"User blocked"
+      })
 
-}
+    }catch (err) {
+      Logger.error(err)
+      return response.status(500).json({
+        status:'internal error',
+        message:"Internal error occurred! Could not block user!"
+      })
+    }
+
+
+  }
+
+
+  }
 
 module.exports = UserController;

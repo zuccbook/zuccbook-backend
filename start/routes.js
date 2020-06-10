@@ -44,6 +44,8 @@ Route.get("/users", "UserController.getAll").middleware(["spoofAccept", "auth",]
 
 Route.get("/user", "UserController.getSelf").middleware(["spoofAccept", "auth"]);
 
+Route.post("/users/block", "UserController.blockUser").middleware(["spoofAccept", "auth"]);
+
 Route.get("/users/search", "UserController.search").middleware(["spoofAccept", "auth"]);
 
 Route.post("/user/changeavatar", "UserController.changeProfilePicture").middleware(["spoofAccept", "auth"]);
