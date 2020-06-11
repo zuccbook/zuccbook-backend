@@ -692,8 +692,49 @@ class UserController {
 
 
   }
+  async switchCurrentAvatar({request, param, auth, response}) {
+    const body = request.all()
+    try{
+      await UserAvatar.query().where('id',body.oldAvatarId).where('user_id',auth.user.id).update({isCurrentAvatar: 0})
+
+    }catch (e) {
+
+    }
+    try {
+      await UserAvatar.query().where('id', body.newAvatarId).where('user_id', auth.user.id).update({isCurrentAvatar: 1})
+      return response.status(200).json({
+        status: 'success',
+        message: "Switched avatar"
+      })
+
+    } catch (e) {
+
+    }
+  }
+  async switchCurrentBanner({request, param, auth, response}) {
+    const body = request.all()
+    try{
+      await UserBanner.query().where('id',body.oldBannerId).where('user_id',auth.user.id).update({isCurrentBanner: 0})
+
+    }catch (e) {
+
+    }
+    try {
+      await UserBanner.query().where('id', body.newBannerId).where('user_id', auth.user.id).update({isCurrentBanner: 1})
+      return response.status(200).json({
+        status: 'success',
+        message: "Switched banner"
+      })
+
+    } catch (e) {
+
+    }
+
+  }
 
 
-}
+
+
+  }
 
 module.exports = UserController;
