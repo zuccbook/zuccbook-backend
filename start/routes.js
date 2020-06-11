@@ -52,6 +52,10 @@ Route.post("/user/changeavatar", "UserController.changeProfilePicture").middlewa
 
 Route.post("/user/changebanner", "UserController.changeProfileBanner").middleware(["spoofAccept", "auth"]);
 
+Route.patch("/user/switchCurrentBanner", "UserController.switchCurrentBanner").middleware(["spoofAccept", "auth"]);
+
+Route.patch("/user/switchCurrentAvatar", "UserController.switchCurrentAvatar").middleware(["spoofAccept", "auth"]);
+
 Route.get("/users/avatars/:userid", "UserController.getAllAvatars").middleware(["spoofAccept", "auth"]);
 
 Route.get("/users/banners/:userid", "UserController.getAllBanners").middleware(["spoofAccept", "auth"]);
