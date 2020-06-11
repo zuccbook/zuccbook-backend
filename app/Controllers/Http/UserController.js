@@ -560,7 +560,7 @@ class UserController {
 
     return response.status(200).json({
       success: 'success',
-      avatars: userBanners
+      data: userBanners
 
     })
   }
