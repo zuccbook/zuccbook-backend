@@ -55,8 +55,15 @@ class UserController {
     user.gender = body.gender;
     user.birthday = body.birthday;
     user.password = body.password;
+    try {
+      await user.save();
 
-    await user.save();
+    } catch (err) {
+      return response.status(500).json({
+        status: "Error",
+        message: 'could not save user'
+      });
+    }
 
 
     const setting = new PrivacySetting();
@@ -66,7 +73,19 @@ class UserController {
 
     setting.save()
 
+    try {
+      setting.save()
+
+    } catch (err) {
+      return response.status(500).json({
+        status: "Error",
+        message: 'could not save settings'
+      });
+    }
+
     const userRole = await Role.findBy("slug", "user");
+
+    await user.Roles().attach([userRole.id]);
 
     let avatarPath = `/${user.id}/avatars/${new Date().getTime()}.png`;
     let bannerPath = `/${user.id}/banners/${new Date().getTime()}.jpg`;
@@ -90,7 +109,7 @@ class UserController {
     await userBanner.save();
     const userAvatar = new UserAvatar();
     userAvatar.user_id = user.id;
-    userAvatar.path = path;
+    userAvatar.path = avatarPath;
     userAvatar.isCurrentAvatar = 1;
     userAvatar.save();
 
@@ -550,7 +569,7 @@ class UserController {
     const body = request.all()
 
     const userBanner = await UserBanner.query().where('id', body.bannerId).where('user_id', auth.user.id).first()
-    if(!userBanner){
+    if (!userBanner) {
       return response.status(400).json({
         status: 'error',
         message: "could not find banner or already deleted"
@@ -650,23 +669,24 @@ class UserController {
       })
     }
   }
+
   async blockUser({request, auth, params, response}) {
     const body = request.all()
-    try{
+    try {
       const blockList = new Blocklist()
       blockList.blocker_id = auth.user.id
       blockList.blocked_user_id = body.targetUserId
       blockList.save()
       return response.status(200).json({
-        status:'success',
-        message:"User blocked"
+        status: 'success',
+        message: "User blocked"
       })
 
-    }catch (err) {
+    } catch (err) {
       Logger.error(err)
       return response.status(500).json({
-        status:'internal error',
-        message:"Internal error occurred! Could not block user!"
+        status: 'internal error',
+        message: "Internal error occurred! Could not block user!"
       })
     }
 
@@ -674,6 +694,6 @@ class UserController {
   }
 
 
-  }
+}
 
 module.exports = UserController;
