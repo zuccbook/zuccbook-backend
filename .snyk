@@ -1,0 +1,36 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.14.1
+ignore: {}
+# patches apply the minimum changes required to fix a vulnerability
+patch:
+  SNYK-JS-LODASH-567746:
+    - '@adonisjs/ace > lodash':
+        patched: '2020-06-11T07:25:34.951Z'
+    - '@adonisjs/auth > lodash':
+        patched: '2020-06-11T07:25:34.951Z'
+    - '@adonisjs/bodyparser > lodash':
+        patched: '2020-06-11T07:25:34.951Z'
+    - '@adonisjs/fold > lodash':
+        patched: '2020-06-11T07:25:34.951Z'
+    - '@adonisjs/framework > lodash':
+        patched: '2020-06-11T07:25:34.951Z'
+    - '@adonisjs/lucid > lodash':
+        patched: '2020-06-11T07:25:34.951Z'
+    - '@adonisjs/session > lodash':
+        patched: '2020-06-11T07:25:34.951Z'
+    - '@adonisjs/validator > lodash':
+        patched: '2020-06-11T07:25:34.951Z'
+    - adonis-acl > lodash:
+        patched: '2020-06-11T07:25:34.951Z'
+    - '@adonisjs/framework > @adonisjs/middleware-base > lodash':
+        patched: '2020-06-11T07:25:34.951Z'
+    - '@adonisjs/websocket > @adonisjs/middleware-base > lodash':
+        patched: '2020-06-11T07:25:34.951Z'
+    - '@adonisjs/framework > edge.js > lodash':
+        patched: '2020-06-11T07:25:34.951Z'
+    - '@adonisjs/lucid > knex > lodash':
+        patched: '2020-06-11T07:25:34.951Z'
+    - '@adonisjs/framework > winston > async > lodash':
+        patched: '2020-06-11T07:25:34.951Z'
+    - '@adonisjs/lucid > knex-dynamic-connection > knex > lodash':
+        patched: '2020-06-11T07:27:25.134Z'
