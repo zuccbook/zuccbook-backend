@@ -6,7 +6,9 @@
   "main": "index.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node ace test"
+    "test": "node ace test",
+    "snyk-protect": "snyk protect",
+    "prepare": "npm run snyk-protect"
   },
   "keywords": [
     "reidun",
@@ -36,10 +38,12 @@
     "mysql": "^2.17.1",
     "read-chunk": "^3.2.0",
     "set-value": "latest",
-    "xregexp": "^4.3.0"
+    "xregexp": "^4.3.0",
+    "snyk": "^1.339.0"
   },
   "devDependencies": {},
   "autoload": {
     "App": "./app"
-  }
+  },
+  "snyk": true
 }
