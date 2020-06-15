@@ -10,14 +10,14 @@ class SecurityLogSchema extends Schema {
       table.string('log').notNullable()
       table.date('date').notNullable()
 
-      table.uuid('event_id',6).index().notNullable();
+      table.integer('event_id',10).index().notNullable().unsigned();
       table.foreign('event_id').references('id').on('events').onDelete('cascade')
 
       table.uuid('user_id',6).index().notNullable();
       table.foreign('user_id').references('id').on('users').onDelete('cascade')
 
-      table.uuid('ip_location_id',6).index().notNullable();
-      table.foreign('ip_location_id').references('ip').on('ip_locations').onDelete('cascade')
+      table.string('ip',100).index().notNullable();
+      table.foreign('ip').references('ip').on('ip_locations').onDelete('cascade')
     })
   }
 

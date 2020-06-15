@@ -6,7 +6,7 @@ const Schema = use('Schema')
 class IpLocationSchema extends Schema {
   up () {
     this.create('ip_locations', (table) => {
-        table.string('ip').primary().notNullable()
+        table.string('ip',100).primary().notNullable()
         table.string('location').notNullable()
     })
   }
