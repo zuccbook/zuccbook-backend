@@ -16,7 +16,10 @@ const UserAvatar = use("App/Models/UserAvatar");
 const UserBanner = use("App/Models/UserBanner");
 const PrivacySetting = use("App/Models/PrivacySetting");
 const PostImage = use("App/Models/Postimage");
+
 const Blocklist = use("App/Models/blocklist")
+
+const Event = use('Event')
 
 const Logger = use('Logger')
 const Helpers = use('Helpers')
@@ -305,6 +308,16 @@ class UserController {
         message: "Unknown error"
       });
     }
+    const today = new Date();
+    const date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
+    const time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+    const dateTime = date + ' ' + time;
+
+    Event.fire('user::login', {
+      email:body.email,
+      ip:request.ip(),
+      datetime:dateTime
+    })
 
     return response.status(200).json({
       status: "Success",
