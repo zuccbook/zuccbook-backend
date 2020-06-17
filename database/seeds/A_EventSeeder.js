@@ -2,7 +2,7 @@
 
 /*
 |--------------------------------------------------------------------------
-| E_EventSeeder
+| A_EventSeeder
 |--------------------------------------------------------------------------
 |
 | Make use of the Factory instance to seed database with dummy data or
@@ -14,7 +14,7 @@
 const Factory = use('Factory')
 const SecurityEvent = use("App/Models/Event")
 
-class E_EventSeeder {
+class A_EventSeeder {
   async run () {
     const eventTypeArray = ['Login',"LoginFail","NameChange","PasswordChange","postCreate"]
    try{
@@ -30,4 +30,4 @@ class E_EventSeeder {
   }
 }
 
-module.exports = E_EventSeeder
+module.exports = A_EventSeeder

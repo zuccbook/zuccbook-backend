@@ -284,6 +284,11 @@ class UserController {
   }
 
   async login({request, auth, response}) {
+    const today = new Date();
+    const date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
+    const time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+    const dateTime = date + ' ' + time;
+
     const rules = {
       email: "required|email",
       password: "required"
@@ -299,19 +304,31 @@ class UserController {
         message: validation.messages()
       });
     }
-
-    const jwt = await auth.attempt(body.email, body.password);
+    let jwt;
+    try{
+     jwt = await auth.attempt(body.email, body.password);
+    }catch (err) {
+      Event.fire('user::loginFail', {
+        email:body.email,
+        ip:request.ip(),
+        datetime:dateTime
+      })
+      throw err;
+    }
 
     if (!jwt) {
-      return response.status(500).json({
+      Event.fire('user::loginFail', {
+        email: body.email,
+        ip: request.ip(),
+        datetime: dateTime
+      })
+
+        return response.status(500).json({
         status: "Error",
         message: "Unknown error"
       });
     }
-    const today = new Date();
-    const date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
-    const time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
-    const dateTime = date + ' ' + time;
+
 
     Event.fire('user::login', {
       email:body.email,

@@ -155,3 +155,10 @@ Route.get('/notifications/all','NotificationController.getAllNotifications').mid
 
 Route.get('/notifications/unread','NotificationController.getUnreadNotifications').middleware(['spoofAccept','auth'])
 
+/** ----------------------------------------------------------------
+ *                         SECURITY ROUTES
+ * ----------------------------------------------------------------
+ */
+Route.get('/user/security/log','SecurityController.getSecurityLogFromUser').middleware(['spoofAccept','auth'])
+
+

@@ -8,7 +8,7 @@ class SecurityLogSchema extends Schema {
     this.create('security_logs', (table) => {
       table.increments()
       table.string('log').notNullable()
-      table.date('date').notNullable()
+      table.dateTime('date').notNullable()
 
       table.integer('event_id',10).index().notNullable().unsigned();
       table.foreign('event_id').references('id').on('events').onDelete('cascade')
