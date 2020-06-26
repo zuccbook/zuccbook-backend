@@ -372,7 +372,7 @@ class PostController {
       })
     }
     try {
-      await PostComment.query().where("id", body.commentId).where("users_id",auth.user.id).update({comment_content:body.newText})
+      await PostComment.query().where("id", body.commentId).where("users_id",auth.user.id).update({comment_content:body.newText,edited:1})
       return response.status(200).json({
         status:"error",
         message:"Post text successfully changed!"
@@ -680,7 +680,7 @@ class PostController {
       })
     }
     try {
-      await Post.query().where("id", body.postId).where("poster_id",body.userId).update({text:body.newText})
+      await Post.query().where("id", body.postId).where("poster_id",body.userId).update({text:body.newText,edited:1})
       return response.status(200).json({
         status:"error",
         message:"Post text successfully changed!"

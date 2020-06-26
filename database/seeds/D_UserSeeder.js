@@ -18,6 +18,7 @@ const os = require("os");
 const User = use("App/Models/User");
 const Role = use("App/Models/Role");
 const UserAvatar = use("App/Models/UserAvatar");
+const UserBanner = use("App/Models/UserBanner");
 const PrivacySetting = use("App/Models/PrivacySetting");
 
 
@@ -50,7 +51,9 @@ class D_UserSeeder {
     await findUser.Roles().attach([adminRole.id]);
 
     const dirs = ['/reidun_data','/reidun_data/store/','/reidun_data/store/post','/reidun_data/store/user']
-    let path = "/" + user.id + `/${new Date().getTime()}.png`;
+    let avatarPath = `/${user.id}/avatars/${new Date().getTime()}.png`;
+    let bannerPath = `/${user.id}/banners/${new Date().getTime()}.jpg`;
+
     try {
       for (let dir of dirs) {
         if (!fs.existsSync(os.homedir + dir)) {
@@ -58,22 +61,32 @@ class D_UserSeeder {
         }
       }
 
-      fs.mkdirSync(os.homedir + "/reidun_data/store/user/" + user.id);
+      fs.mkdirSync(`${os.homedir}/reidun_data/store/user/${user.id}`);
+      fs.mkdirSync(`${os.homedir}/reidun_data/store/user/${user.id}/avatars`);
+      fs.mkdirSync(`${os.homedir}/reidun_data/store/user/${user.id}/banners`);
 
-      FileUtil.copy('./store/default/account.png', os.homedir + "/reidun_data/store/user" + path, (err) => {
+      FileUtil.copy('./store/default/account.png', `${os.homedir}/reidun_data/store/user/${avatarPath}`, (err) => {
+        if (err) return err;
+
+      });
+      FileUtil.copy('./store/default/banner.jpg', `${os.homedir}/reidun_data/store/user/${bannerPath}`, (err) => {
         if (err) return err;
 
       });
     } catch (e) {
       console.log(e)
     }
-
+    const userBanner = new UserBanner();
+    userBanner.user_id = user.id;
+    userBanner.path = bannerPath;
+    userBanner.isCurrentBanner = 1;
+    await userBanner.save();
     const userAvatar = new UserAvatar();
     userAvatar.user_id = user.id;
-    userAvatar.path = path;
+    userAvatar.path = avatarPath;
     userAvatar.isCurrentAvatar = 1;
     await userAvatar.save();
-    console.log("made default user, it's recommend you change your password")
+    console.log("made default user, it's recommended you change your password")
 
   }
 }

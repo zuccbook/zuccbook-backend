@@ -3,9 +3,9 @@
 /** @type {typeof import('@adonisjs/lucid/src/Lucid/Model')} */
 const Model = use('Model')
 
-class UserAvatar extends Model {
+class IpLocation extends Model {
   static get table () {
-    return 'user_avatars'
+    return 'ip_locations'
   }
 
   static get createdAtColumn () {
@@ -15,8 +15,6 @@ class UserAvatar extends Model {
   static get updatedAtColumn () {
     return null;
   }
-
 }
 
-
-module.exports = UserAvatar
+module.exports = IpLocation

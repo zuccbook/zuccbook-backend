@@ -11,6 +11,7 @@ class PostSchema extends Schema {
        table.dateTime('dateposted').notNullable();
        table.uuid('poster_id',6).index()
        table.foreign('poster_id').references('id').on('users').onDelete('cascade')
+       table.integer("edited").defaultTo(0).notNullable();
     })
   }
 

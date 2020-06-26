@@ -12,7 +12,7 @@ class SpoofAccept {
   async handle ({ request }, next) {
     // call next to advance the request
 
-    request.request.headers["accept"] = 'application/json';
+    request.headers["accept"] = 'application/json';
 
     await next()
   }

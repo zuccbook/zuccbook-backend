@@ -30,6 +30,10 @@ Route.patch("/user/update", "UserController.update").middleware(["spoofAccept", 
 
 Route.delete("/user/delete", "UserController.delete").middleware(["spoofAccept", "auth",]);
 
+Route.delete("/user/banner/delete", "UserController.deleteBanner").middleware(["spoofAccept", "auth",]);
+
+Route.delete("/user/avatar/delete", "UserController.deleteAvatar").middleware(["spoofAccept", "auth",]);
+
 Route.post("/user/login", "UserController.login").middleware(["spoofAccept", "guest"]);
 
 Route.patch( "/user/update/requirePass", "UserController.updateAndRequirePass").middleware(["spoofAccept", "auth"]);
@@ -40,11 +44,21 @@ Route.get("/users", "UserController.getAll").middleware(["spoofAccept", "auth",]
 
 Route.get("/user", "UserController.getSelf").middleware(["spoofAccept", "auth"]);
 
+Route.post("/users/block", "UserController.blockUser").middleware(["spoofAccept", "auth"]);
+
 Route.get("/users/search", "UserController.search").middleware(["spoofAccept", "auth"]);
 
 Route.post("/user/changeavatar", "UserController.changeProfilePicture").middleware(["spoofAccept", "auth"]);
 
+Route.post("/user/changebanner", "UserController.changeProfileBanner").middleware(["spoofAccept", "auth"]);
+
+Route.patch("/user/switchCurrentBanner", "UserController.switchCurrentBanner").middleware(["spoofAccept", "auth"]);
+
+Route.patch("/user/switchCurrentAvatar", "UserController.switchCurrentAvatar").middleware(["spoofAccept", "auth"]);
+
 Route.get("/users/avatars/:userid", "UserController.getAllAvatars").middleware(["spoofAccept", "auth"]);
+
+Route.get("/users/banners/:userid", "UserController.getAllBanners").middleware(["spoofAccept", "auth"]);
 
 Route.patch("/users/privacy/request/change", "UserController.changeFriendRequestPrivacy").middleware(["spoofAccept", "auth"]);
 
@@ -58,8 +72,11 @@ Route.patch("/users/privacy/profile/change", "UserController.changeProfilePrivac
  */
 
 
-Route.get("/media/avatar/:userid/:image", "MediaController.getUserAvatar").middleware(["spoofAccept"]);
+
+Route.get("/media/avatar/:userid/avatars/:image", "MediaController.getUserAvatar").middleware(["spoofAccept"]);
+Route.get("/media/user/:userid/banners/:image", "MediaController.getUserBanner").middleware(["spoofAccept"]);
 Route.get("/media/post/:postid/:file", "MediaController.getPostFile").middleware(["spoofAccept"]);
+
 
 
 
@@ -137,4 +154,11 @@ Route.get("/post/user/files/:id", "PostController.getFilesPostedByUser").middlew
 Route.get('/notifications/all','NotificationController.getAllNotifications').middleware(['spoofAccept','auth'])
 
 Route.get('/notifications/unread','NotificationController.getUnreadNotifications').middleware(['spoofAccept','auth'])
+
+/** ----------------------------------------------------------------
+ *                         SECURITY ROUTES
+ * ----------------------------------------------------------------
+ */
+Route.get('/user/security/log','SecurityController.getSecurityLogFromUser').middleware(['spoofAccept','auth'])
+
 

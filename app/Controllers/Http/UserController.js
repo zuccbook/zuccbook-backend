@@ -13,9 +13,15 @@ const User = use("App/Models/User");
 const Role = use("App/Models/Role");
 const UserRole = use("App/Models/UserRole")
 const UserAvatar = use("App/Models/UserAvatar");
+const UserBanner = use("App/Models/UserBanner");
 const PrivacySetting = use("App/Models/PrivacySetting");
 const PostImage = use("App/Models/Postimage");
 
+const Blocklist = use("App/Models/blocklist")
+
+const Event = use('Event')
+
+const Logger = use('Logger')
 const Helpers = use('Helpers')
 
 const Hash = use('Hash');
@@ -52,8 +58,15 @@ class UserController {
     user.gender = body.gender;
     user.birthday = body.birthday;
     user.password = body.password;
+    try {
+      await user.save();
 
-    await user.save();
+    } catch (err) {
+      return response.status(500).json({
+        status: "Error",
+        message: 'could not save user'
+      });
+    }
 
 
     const setting = new PrivacySetting();
@@ -63,20 +76,43 @@ class UserController {
 
     setting.save()
 
+    try {
+      setting.save()
+
+    } catch (err) {
+      return response.status(500).json({
+        status: "Error",
+        message: 'could not save settings'
+      });
+    }
+
     const userRole = await Role.findBy("slug", "user");
 
     await user.Roles().attach([userRole.id]);
-    fs.mkdirSync(os.homedir+"/reidun_data/store/user/" + user.id);
 
-    let path = "/" + user.id + `/${new Date().getTime()}.png`;
-    FileUtil.copy('./store/default/account.png', os.homedir+"/reidun_data/store/user" + path, (err) => {
+    let avatarPath = `/${user.id}/avatars/${new Date().getTime()}.png`;
+    let bannerPath = `/${user.id}/banners/${new Date().getTime()}.jpg`;
+
+    fs.mkdirSync(`${os.homedir}/reidun_data/store/user/${user.id}`);
+    fs.mkdirSync(`${os.homedir}/reidun_data/store/user/${user.id}/avatars`);
+    fs.mkdirSync(`${os.homedir}/reidun_data/store/user/${user.id}/banners`);
+
+    FileUtil.copy('./store/default/account.png', `${os.homedir}/reidun_data/store/user/${avatarPath}`, (err) => {
       if (err) return err;
 
     });
+    FileUtil.copy('./store/default/banner.jpg', `${os.homedir}/reidun_data/store/user/${bannerPath}`, (err) => {
+      if (err) return err;
 
+    });
+    const userBanner = new UserBanner();
+    userBanner.user_id = user.id;
+    userBanner.path = bannerPath;
+    userBanner.isCurrentBanner = 1;
+    await userBanner.save();
     const userAvatar = new UserAvatar();
     userAvatar.user_id = user.id;
-    userAvatar.path = path;
+    userAvatar.path = avatarPath;
     userAvatar.isCurrentAvatar = 1;
     userAvatar.save();
 
@@ -89,7 +125,7 @@ class UserController {
   async updateAndRequirePass({request, auth, response}) {
     const user = await User.find(auth.user.id);
     const input = request.all();
-    if (!user || !this.comparePassword(input.passCheck,auth.user.password)) {
+    if (!user || !this.comparePassword(input.passCheck, auth.user.password)) {
       return response.status(400).json({
         status: "Error",
         message: "Request was malformed"
@@ -106,12 +142,12 @@ class UserController {
 
     const body = {};
 
-    body.first_name =  input.first_name;
-    body.last_name =  input.last_name;
-    body.gender =  input.gender;
-    body.birthday =  input.birthday;
-    body.email =  input.email;
-    body.password =  input.informationEdit === true ? user.password : input.password;
+    body.first_name = input.first_name;
+    body.last_name = input.last_name;
+    body.gender = input.gender;
+    body.birthday = input.birthday;
+    body.email = input.email;
+    body.password = input.informationEdit === true ? user.password : input.password;
 
     const validation = await validate(body, rules);
 
@@ -136,6 +172,7 @@ class UserController {
       message: "The users was successfully updated."
     });
   }
+
   async update({request, auth, response}) {
     const user = await User.find(auth.user.id);
     if (!user) {
@@ -207,10 +244,12 @@ class UserController {
     const db_user = await User.query()
       .where("users.id", params.id).first()
     const userAvatar = await UserAvatar.query().where('user_id', db_user.id).where('isCurrentAvatar', 1).first()
+    const userBanner = await UserBanner.query().where('user_id', db_user.id).where('isCurrentBanner', 1).first()
     const privacySettings = await PrivacySetting.query().where('user_id', db_user.id).first()
     const user = JSON.parse(JSON.stringify(db_user));
     delete user.password;
     user.avatar = userAvatar;
+    user.banner = userBanner;
     user.privacy = privacySettings;
 
     if (!user) {
@@ -245,6 +284,11 @@ class UserController {
   }
 
   async login({request, auth, response}) {
+    const today = new Date();
+    const date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
+    const time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+    const dateTime = date + ' ' + time;
+
     const rules = {
       email: "required|email",
       password: "required"
@@ -260,15 +304,37 @@ class UserController {
         message: validation.messages()
       });
     }
-
-    const jwt = await auth.attempt(body.email, body.password);
+    let jwt;
+    try{
+     jwt = await auth.attempt(body.email, body.password);
+    }catch (err) {
+      Event.fire('user::loginFail', {
+        email:body.email,
+        ip:request.ip(),
+        datetime:dateTime
+      })
+      throw err;
+    }
 
     if (!jwt) {
-      return response.status(500).json({
+      Event.fire('user::loginFail', {
+        email: body.email,
+        ip: request.ip(),
+        datetime: dateTime
+      })
+
+        return response.status(500).json({
         status: "Error",
         message: "Unknown error"
       });
     }
+
+
+    Event.fire('user::login', {
+      email:body.email,
+      ip:request.ip(),
+      datetime:dateTime
+    })
 
     return response.status(200).json({
       status: "Success",
@@ -286,10 +352,12 @@ class UserController {
     const userRoles = await UserRole.query().where('user_id', db_user.id).first()
     const Roles = await Role.query().where('id', userRoles.role_id).first()
     const Privacy = await PrivacySetting.query().where('user_id', db_user.id).first()
+    const userBanner = await UserBanner.query().where('user_id', db_user.id).where('isCurrentBanner', 1).first()
 
     const user = JSON.parse(JSON.stringify(db_user));
     delete user.password
     user.avatar = JSON.parse(JSON.stringify(userAvatar));
+    user.banner = JSON.parse(JSON.stringify(userBanner));
     user.privacy = JSON.parse(JSON.stringify(Privacy))
     user.roles = JSON.parse(JSON.stringify(userRoles))
     user.roles.role = JSON.parse(JSON.stringify(Roles))
@@ -308,7 +376,7 @@ class UserController {
     });
   }
 
-  comparePassword(passCheck,hash) {
+  comparePassword(passCheck, hash) {
 
     return Hash.verify(passCheck, hash);
 
@@ -364,7 +432,7 @@ class UserController {
       });
     }
 
-    await profilePic.move(os.homedir+"/reidun_data/uploads", {
+    await profilePic.move(os.homedir + "/reidun_data/uploads", {
       name: profilePic.fileName,
       overwrite: true
     })
@@ -376,25 +444,24 @@ class UserController {
       });
 
     }
-    const buffer = readChunk.sync(os.homedir+"/reidun_data/uploads/"+profilePic.fileName, 0, 12);
+    const buffer = readChunk.sync(os.homedir + "/reidun_data/uploads/" + profilePic.fileName, 0, 12);
     const result = imageType(buffer);
-    if(!result){
-      fs.unlink(os.homedir+'/reidun_data/uploads/'+profilePic.fileName, (err) => {
-        if(err){
+
+    if (!result) {
+      fs.unlink(os.homedir + '/reidun_data/uploads/' + profilePic.fileName, (err) => {
+        if (err) {
           console.log(err)
         }
       })
       return response.status(400).json({
-        message:"not an image"
+        message: "not an image"
       })
     }
 
 
+    let path = `/${userid}/avatars/${new Date().getTime()}.` + profilePic.subtype;
 
-    let path = userid + "/" + `${new Date().getTime()}.` + profilePic.subtype;
-
-    await moveFile(os.homedir+"/reidun_data/uploads/" + profilePic.fileName, os.homedir+"/reidun_data/store/user/" + path)
-
+    await moveFile(`${os.homedir}/reidun_data/uploads/${profilePic.fileName}`, `${os.homedir}/reidun_data/store/user/${path}`)
     try {
       await UserAvatar.query().where('user_id', userid).where('isCurrentAvatar', 1).update({'isCurrentAvatar': 0})
       const userAvatar = new UserAvatar();
@@ -420,6 +487,79 @@ class UserController {
     });
   }
 
+  async changeProfileBanner({request, auth, response}) {
+    const {userid} = request.all();
+
+    const profileBanner = request.file('image', {
+      types: ['image'],
+      size: '2mb',
+      extnames: ['png', 'jpg', 'jfif']
+
+    })
+
+
+    if (!profileBanner) {
+      return response.status(400).json({
+        status: "error",
+        message: "no file!"
+      });
+    }
+
+    await profileBanner.move(os.homedir + "/reidun_data/uploads", {
+      name: profileBanner.fileName,
+      overwrite: true
+    })
+
+    if (!profileBanner.moved()) {
+      return response.status(500).json({
+        status: "error",
+        message: profileBanner.error().message
+      });
+
+    }
+    const buffer = readChunk.sync(os.homedir + "/reidun_data/uploads/" + profileBanner.fileName, 0, 12);
+    const result = imageType(buffer);
+    if (!result) {
+      fs.unlink(os.homedir + '/reidun_data/uploads/' + profileBanner.fileName, (err) => {
+        if (err) {
+          console.log(err)
+        }
+      })
+      return response.status(400).json({
+        message: "not an image"
+      })
+    }
+
+
+    let path = `/${userid}/banners/${new Date().getTime()}.` + profileBanner.subtype;
+
+    await moveFile(`${os.homedir}/reidun_data/uploads/${profileBanner.fileName}`, `${os.homedir}/reidun_data/store/user/${path}`)
+
+    try {
+      await UserBanner.query().where('user_id', userid).where('isCurrentBanner', 1).update({'isCurrentBanner': 0})
+      const userBanner = new UserBanner();
+
+      userBanner.user_id = userid
+      userBanner.path = path
+      userBanner.isCurrentBanner = 1;
+      userBanner.save();
+
+    } catch (e) {
+      const userBanner = new userBanner();
+
+      userBanner.user_id = userid
+      userBanner.path = path
+      userBanner.isCurrentBanner = 1;
+      userBanner.save();
+    }
+
+
+    return response.status(200).json({
+      status: "Success",
+      message: 'updated banner!'
+    });
+  }
+
   async getAllAvatars({request, auth, params, response}) {
 
     const userAvatars = await UserAvatar.query().where('user_id', params.userid).fetch()
@@ -437,33 +577,122 @@ class UserController {
     })
 
   }
+
+  async getAllBanners({request, auth, params, response}) {
+
+    const userBanners = await UserBanner.query().where('user_id', params.userid).fetch()
+
+    if (!userBanners) {
+      return response.status(404).json({
+        error: "not found"
+      })
+    }
+
+    return response.status(200).json({
+      success: 'success',
+      data: userBanners
+
+    })
+  }
+
+  async deleteBanner({request, auth, params, response}) {
+    const body = request.all()
+
+    const userBanner = await UserBanner.query().where('id', body.bannerId).where('user_id', auth.user.id).first()
+    if (!userBanner) {
+      return response.status(400).json({
+        status: 'error',
+        message: "could not find banner or already deleted"
+
+      })
+    }
+    try {
+
+      fs.unlink(`${os.homedir}/reidun_data/store/user/${userBanner.path}`, (err) => {
+        if (err) throw err
+      })
+
+      await UserBanner.query().where('id', body.bannerId).where('user_id', auth.user.id).delete()
+
+      return response.status(200).json({
+        status: 'success',
+        message: "deleted banner"
+
+      })
+    } catch (err) {
+
+      Logger.error(err)
+      Logger.transport('file').error(err)
+
+      return response.status(500).json({
+        status: 'error',
+        message: "could not delete image file or already deleted"
+
+      })
+    }
+
+
+  }
+
+  async deleteAvatar({request, auth, params, response}) {
+    const body = request.all()
+    const userAvatar = await UserAvatar.query().where('id', body.avatarId).where('user_id', auth.user.id).first()
+    if (!userAvatar) {
+      return response.status(400).json({
+        status: 'error',
+        message: "could not find avatar or already deleted"
+
+      })
+    }
+    try {
+      await fs.unlink(`${os.homedir}/reidun_data/store/user/${userAvatar.path}`, async (err) => {
+        if (err) throw err
+      })
+      await UserAvatar.query().where('id', body.avatarId).where('user_id', auth.user.id).delete()
+      return response.status(200).json({
+        success: 'success',
+        message: "deleted avatar"
+
+      })
+    } catch (err) {
+      Logger.error(err)
+      Logger.transport('file').error(err)
+      return response.status(500).json({
+        success: 'success',
+        message: "could not delete avatar or already deleted"
+
+      })
+    }
+  }
+
   async changeProfilePrivacy({request, auth, params, response}) {
     const body = request.only(["privacy_setting"])
     try {
-       await PrivacySetting.query().where('user_id', auth.user.id).update({profile_privacy:body.privacy_setting})
+      await PrivacySetting.query().where('user_id', auth.user.id).update({profile_privacy: body.privacy_setting})
       return response.status(200).json({
         success: 'success',
-        message:'Changed'
+        message: 'Changed'
 
       })
-    }catch (e) {
+    } catch (e) {
 
       return response.status(404).json({
         error: "not found"
       })
     }
   }
+
   async changeFriendRequestPrivacy({request, auth, params, response}) {
     const body = request.only(["privacy_setting"])
 
     try {
-      await PrivacySetting.query().where('user_id', auth.user.id).update({who_can_add:body.privacy_setting})
+      await PrivacySetting.query().where('user_id', auth.user.id).update({who_can_add: body.privacy_setting})
       return response.status(200).json({
         success: 'success',
-        message:'Changed'
+        message: 'Changed'
 
       })
-    }catch (e) {
+    } catch (e) {
 
       return response.status(500).json({
         error: e.message
@@ -471,6 +700,71 @@ class UserController {
     }
   }
 
-}
+  async blockUser({request, auth, params, response}) {
+    const body = request.all()
+    try {
+      const blockList = new Blocklist()
+      blockList.blocker_id = auth.user.id
+      blockList.blocked_user_id = body.targetUserId
+      blockList.save()
+      return response.status(200).json({
+        status: 'success',
+        message: "User blocked"
+      })
+
+    } catch (err) {
+      Logger.error(err)
+      return response.status(500).json({
+        status: 'internal error',
+        message: "Internal error occurred! Could not block user!"
+      })
+    }
+
+
+  }
+  async switchCurrentAvatar({request, param, auth, response}) {
+    const body = request.all()
+    try{
+      await UserAvatar.query().where('id',body.oldAvatarId).where('user_id',auth.user.id).update({isCurrentAvatar: 0})
+
+    }catch (e) {
+
+    }
+    try {
+      await UserAvatar.query().where('id', body.newAvatarId).where('user_id', auth.user.id).update({isCurrentAvatar: 1})
+      return response.status(200).json({
+        status: 'success',
+        message: "Switched avatar"
+      })
+
+    } catch (e) {
+
+    }
+  }
+  async switchCurrentBanner({request, param, auth, response}) {
+    const body = request.all()
+    try{
+      await UserBanner.query().where('id',body.oldBannerId).where('user_id',auth.user.id).update({isCurrentBanner: 0})
+
+    }catch (e) {
+
+    }
+    try {
+      await UserBanner.query().where('id', body.newBannerId).where('user_id', auth.user.id).update({isCurrentBanner: 1})
+      return response.status(200).json({
+        status: 'success',
+        message: "Switched banner"
+      })
+
+    } catch (e) {
+
+    }
+
+  }
+
+
+
+
+  }
 
 module.exports = UserController;
