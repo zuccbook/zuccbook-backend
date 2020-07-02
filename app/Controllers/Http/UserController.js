@@ -16,8 +16,7 @@ const UserAvatar = use("App/Models/UserAvatar");
 const UserBanner = use("App/Models/UserBanner");
 const PrivacySetting = use("App/Models/PrivacySetting");
 const PostImage = use("App/Models/Postimage");
-
-const Blocklist = use("App/Models/blocklist")
+const Blocklist = use("App/Models/Blocklist")
 
 const Event = use('Event')
 
