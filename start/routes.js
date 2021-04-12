@@ -101,6 +101,8 @@ Route.get("/friends/user/:id/mutuals", "FriendController.getMutuals").middleware
 
 Route.get("/friends/request/all", "FriendController.getFriendRequests").middleware(["spoofAccept", "auth"]);
 
+Route.get("/friends/status", "FriendController.getFriendsWithStatus").middleware(["spoofAccept", "auth"]);
+
 Route.post("/friends/request/deny", "FriendController.denyFriendRequest").middleware(["spoofAccept", "auth"]);
 
 Route.delete("/friends/request/cancel", "FriendController.CancelFriendRequest").middleware(["spoofAccept", "auth"]);

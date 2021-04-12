@@ -127,12 +127,11 @@ class PostController {
 
   async deletePost({request, params, auth, response}) {
     const body = request.only(['postId'])
-    if (!body) {
+    if(Object.keys(body).length === 0){
       return response.status(400).json({
-        status: 'bad request',
-        message: "Body can't be empty!"
+        status: 'error',
+        message: 'body is empty'
       })
-
     }
     try {
 
@@ -189,10 +188,10 @@ class PostController {
 
   async likePost({request, params, auth, response}) {
     const body = request.only(['postId', 'userId','senderId'])
-    if(!body){
+    if(Object.keys(body).length === 0){
       return response.status(400).json({
         status: 'error',
-        message: 'body empty'
+        message: 'body is empty'
       })
     }
     try {
@@ -225,8 +224,9 @@ class PostController {
 
   }
   async unlikePost({request, params, auth, response}) {
-    const body = request.only(['userId','postId'])
-    if(!body){
+    const body = request.all()
+    console.log(body)
+    if(Object.keys(body).length === 0){
       return response.status(400).json({
         status: 'error',
         message: 'body is empty'
@@ -248,6 +248,12 @@ class PostController {
 
   async dislikePost({request, params, auth, response}) {
     const body = request.only(['postId', 'userId','senderId'])
+    if(Object.keys(body).length === 0){
+      return response.status(400).json({
+        status: 'error',
+        message: 'body is empty'
+      })
+    }
     try {
       const dislikePost = new Postdislike()
       dislikePost.user_id = body.senderId
@@ -276,8 +282,9 @@ class PostController {
   }
 
   async undislikePost({request, params, auth, response}) {
-    const body = request.only(['userId','postId'])
-    if(!body){
+    const body = request.body
+    console.log(body)
+    if(Object.keys(body).length === 0){
       return response.status(400).json({
         status: 'error',
         message: 'body is empty'

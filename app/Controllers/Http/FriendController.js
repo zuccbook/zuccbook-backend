@@ -5,6 +5,7 @@ const Relationship = use('App/Models/Relationship')
 const Notification = use('App/Models/Notification')
 const User = use("App/Models/User");
 const UserAvatar = use("App/Models/UserAvatar");
+const UserStatus = use("App/Models/UserStatus");
 const Database = use('Database')
 
 
@@ -225,6 +226,42 @@ class FriendController {
     });
 
   }
+  async getFriendsWithStatus({request, params, auth, response}) {
+
+    const friends = await Relationship.query().where("status", 1).whereRaw("(user_id_1 = ? OR user_id_2 = ?)", [auth.user.id, auth.user.id]).fetch()
+    const data = JSON.parse(JSON.stringify(friends))
+    for (let friend of data) {
+      let user;
+      let status;
+      if (friend.user_id_1 === auth.user.id) {
+        user = await User.query().where("id", friend.user_id_2).first()
+        status = await UserStatus.query().where("user_id", friend.user_id_2).first()
+      } else if (friend.user_id_2 === auth.user.id) {
+        user = await User.query().where("id", friend.user_id_1).first()
+        status = await UserStatus.query().where("user_id", friend.user_id_1).first()
+      }
+      friend.user = JSON.parse(JSON.stringify(user));
+      friend.user.status = status;
+      const userAvatar = await UserAvatar.query().where("user_id", user.id).where('isCurrentAvatar', 1).first()
+      friend.user.avatar = JSON.parse(JSON.stringify(userAvatar));
+      delete friend.user.password
+
+
+    }
+
+    if (data.length === 0) {
+      return response.status(404).json({
+        status: "Error",
+        message: "No friends"
+      });
+    }
+
+    return response.status(200).json({
+      status: "Success",
+      data: data
+    });
+
+  }
 
   async getFriendRequests({request, params, auth, response}) {
 
@@ -251,7 +288,6 @@ class FriendController {
 
 
   }
-
 
 }
 

@@ -3,6 +3,7 @@ const Ws = use('Ws')
 
 const Relationship = use("App/Models/Relationship")
 const User = use("App/Models/User")
+const UserStatus = use("App/Models/UserStatus")
 
 
 class EventController {
@@ -12,6 +13,7 @@ class EventController {
     this.auth = auth
 
     console.log(`${auth.user.firstname} connected, on ${socket.id}`)
+
 
     socket.on('POST_CREATE', (e) => this.onPostCreate(auth.user.id, e))
     socket.on('POST_DELETE', (e) => this.onPostDelete(auth.user.id, e))

@@ -19,6 +19,7 @@ const User = use("App/Models/User");
 const Role = use("App/Models/Role");
 const UserAvatar = use("App/Models/UserAvatar");
 const UserBanner = use("App/Models/UserBanner");
+const UserStatus = use("App/Models/UserStatus");
 const PrivacySetting = use("App/Models/PrivacySetting");
 
 
@@ -86,6 +87,11 @@ class D_UserSeeder {
     userAvatar.path = avatarPath;
     userAvatar.isCurrentAvatar = 1;
     await userAvatar.save();
+    const userStatus = new UserStatus();
+    userStatus.user_id = user.id;
+    userStatus.status = 0;
+    await userStatus.save();
+
     console.log("made default user, it's recommended you change your password")
 
   }

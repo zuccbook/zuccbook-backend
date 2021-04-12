@@ -14,6 +14,7 @@ const Role = use("App/Models/Role");
 const UserRole = use("App/Models/UserRole")
 const UserAvatar = use("App/Models/UserAvatar");
 const UserBanner = use("App/Models/UserBanner");
+const UserStatus = use("App/Models/UserStatus");
 const PrivacySetting = use("App/Models/PrivacySetting");
 const PostImage = use("App/Models/Postimage");
 const Blocklist = use("App/Models/Blocklist")
@@ -114,7 +115,10 @@ class UserController {
     userAvatar.path = avatarPath;
     userAvatar.isCurrentAvatar = 1;
     userAvatar.save();
-
+    const userStatus = new UserStatus();
+    userStatus.user_id = user.id;
+    userStatus.status = 0;
+    await userStatus.save();
     return response.status(200).json({
       status: "Success",
       message: "The users was successfully created."
